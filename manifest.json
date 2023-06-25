@@ -1,0 +1,10 @@
+{
+"id": "SourceScanner",
+"name": "Source Scanner Plugin",
+"version": "0.0.0",
+"minAppVersion": "0.13.11",
+"description": "Source Scanner Plugin.",
+"author": "gerrie myburgh",
+"isDesktopOnly": false
+}
+
