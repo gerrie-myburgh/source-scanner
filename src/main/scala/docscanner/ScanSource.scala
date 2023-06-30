@@ -31,6 +31,7 @@ object ScanSource:
   private var ext : String = _        // the source file name extension
   private var work : String = _       // start path segment of the source file name
   private var docPath : String = _    // document path
+  private var groupBySize : Int = _   // number of documents to process at a time
   //
   //
   private var sleepLength : Int = _   // number of seconds to sleep
@@ -67,7 +68,7 @@ object ScanSource:
    * @param _sleepLength
    * @return
    */
-  def apply(app : mod.App, _appPath : String, _ext : String, _work : String, _docPath : String, _sleepLength : Int): SetIntervalHandle =
+  def apply(app : mod.App, _appPath : String, _ext : String, _work : String, _docPath : String, _sleepLength : Int, _groupBySize : Int): SetIntervalHandle =
     //
     // initialization
     //
@@ -78,6 +79,7 @@ object ScanSource:
     work = _work
     docPath = _docPath
     sleepLength = _sleepLength
+    groupBySize = _groupBySize
     //
     // make sure the doc path relative from vault exist - if not create this path
     //

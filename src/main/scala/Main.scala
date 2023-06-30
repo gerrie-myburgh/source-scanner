@@ -27,6 +27,7 @@ trait TestObsidianPluginSettings extends  js.Object:
   var appExt  : String = js.native
   var sleepLen: Int    = js.native
   var docFQNStart: String = js.native
+  var groupBySize : Int = js.native
 /**
  * The sample plugin
  *
@@ -45,7 +46,7 @@ class TestObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(app
     var sbItem = addStatusBarItem()
     sbItem.setText("Comment scanner OFF")
 
-    addRibbonIcon("dice",
+    addRibbonIcon("view",
      "Comment Scanner",
       (me) =>
         //
@@ -61,7 +62,14 @@ class TestObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(app
           //
           if intervalHandle.isEmpty then
             sbItem.setText("Comment scanner ON")
-            intervalHandle = Some(ScanSource(app, settings.appPath,settings.appExt,settings.docFQNStart,settings.docPath,settings.sleepLen))
+            intervalHandle = Some(
+              ScanSource(app,
+                settings.appPath,
+                settings.appExt,
+                settings.docFQNStart,
+                settings.docPath,
+                settings.sleepLen,
+                settings.groupBySize))
           else
             sbItem.setText("Comment scanner OFF")
             clearInterval(intervalHandle.get)
@@ -84,7 +92,8 @@ class TestObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(app
         docPath = "UNDEFINED",
         appExt  = ".java",
         sleepLen = 1000,
-        docFQNStart = "UNKNOWN"
+        docFQNStart = "UNKNOWN",
+        groupBySize = 10
       )
 
       settings = js.Object.assign(
@@ -192,6 +201,25 @@ class TestObsidianPluginSettingsTab(app : App, val plugin : TestObsidianPlugin) 
             }
 
             plugin.settings.sleepLen = intValue
+            plugin.saveSettings()
+          )
+        )
+
+      Setting(containerElement)
+        .setName("Number of source files to process")
+        .setDesc("Number of source files to process at a time")
+        .addText(text => text
+          .setPlaceholder("Enter the source file processing count")
+          .setValue(this.plugin.settings.groupBySize.toString)
+          .onChange(value =>
+
+            val intValue = try {
+              (if value.isEmpty then "0" else value).toInt
+            } catch {
+              case i: js.JavaScriptException => 10
+            }
+
+            plugin.settings.groupBySize = intValue
             plugin.saveSettings()
           )
         )
