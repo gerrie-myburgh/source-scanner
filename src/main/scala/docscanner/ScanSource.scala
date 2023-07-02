@@ -1,7 +1,5 @@
 package docscanner
 
-import crosscut.CrossCuttingConcerns
-
 import java.util.Collections.*
 import scala.jdk.CollectionConverters.*
 import scala.scalajs.js.timers.SetIntervalHandle
@@ -166,13 +164,6 @@ object ScanSource:
         phaseCount = 2
 
     if phaseCount == 4 then
-      if (docAndContentString.nonEmpty)
-        //
-        // todo get values from settings
-        //
-        CrossCuttingConcerns("stories", "solutions",docAndContentString.toMap)
-
-    if phaseCount == 5 then
       //
       // every document that does not have a source file must be removed
       //

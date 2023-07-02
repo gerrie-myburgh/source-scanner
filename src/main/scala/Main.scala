@@ -1,8 +1,9 @@
+import crosscut.CrossCuttingConcerns
 import docscanner.ScanSource
 import org.scalajs.dom
 import org.scalajs.dom.{HTMLSpanElement, MouseEvent}
 import typings.electron.Electron.ReadBookmark
-import typings.obsidian.mod.{App, Menu, Modal, Notice, Plugin, PluginManifest, PluginSettingTab, Setting, TextComponent, ViewState, WorkspaceLeaf}
+import typings.obsidian.mod.{App, Command, Menu, Modal, Notice, Plugin, PluginManifest, PluginSettingTab, Setting, TextComponent, ViewState}
 import typings.obsidian.obsidianStrings
 import typings.obsidian.publishMod.global.HTMLElement
 import typings.std.{IArguments, Partial, global}
@@ -45,6 +46,15 @@ class TestObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(app
 
     var sbItem = addStatusBarItem()
     sbItem.setText("Comment scanner OFF")
+
+    addCommand(
+      Command(
+        id = "solution-files-create",
+        name = "Create solution files")
+        .setCallback( () =>
+          CrossCuttingConcerns(app, "stories", "solutions", settings.docPath)
+        )
+    )
 
     addRibbonIcon("view",
      "Comment Scanner",
