@@ -29,6 +29,8 @@ trait TestObsidianPluginSettings extends  js.Object:
   var sleepLen: Int    = js.native
   var docFQNStart: String = js.native
   var groupBySize : Int = js.native
+  var storyFolder : String = js.native
+  var solutionFolder : String = js.native
 /**
  * The sample plugin
  *
@@ -40,11 +42,12 @@ class TestObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(app
   var intervalHandle : Option[SetIntervalHandle] = None
 
   override def onload(): Unit =
+    println("load plugin source-scanner")
     loadSettings()
 
     addSettingTab(TestObsidianPluginSettingsTab(app, this))
 
-    var sbItem = addStatusBarItem()
+    val sbItem = addStatusBarItem()
     sbItem.setText("Comment scanner OFF")
 
     addCommand(
@@ -52,13 +55,18 @@ class TestObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(app
         id = "solution-files-create",
         name = "Create solution files")
         .setCallback( () =>
-          CrossCuttingConcerns(app, "stories", "solutions", settings.docPath)
+          if settings.docPath.equalsIgnoreCase("UNDEFINED") ||
+            settings.storyFolder.equalsIgnoreCase("UNDEFINED") ||
+            settings.solutionFolder.equalsIgnoreCase("UNDEFINED") then
+            Notice("Please configure solution scanner portion before using it.", 0.0)
+          else
+            CrossCuttingConcerns(app, settings.storyFolder, settings.solutionFolder, settings.docPath)
         )
     )
 
     addRibbonIcon("view",
      "Comment Scanner",
-      (me) =>
+      me =>
         //
         // first make sure that config has been done
         //
@@ -87,6 +95,7 @@ class TestObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(app
     )
 
   override def onunload() : Unit =
+    println("unload plugin source-scanner")
     if intervalHandle.isDefined then
       clearInterval(intervalHandle.get)
       intervalHandle = None
@@ -103,7 +112,9 @@ class TestObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(app
         appExt  = ".java",
         sleepLen = 1000,
         docFQNStart = "UNKNOWN",
-        groupBySize = 10
+        groupBySize = 10,
+        storyFolder = "UNDEFINED",
+        solutionFolder = "UNDEFINED"
       )
 
       settings = js.Object.assign(
@@ -230,6 +241,32 @@ class TestObsidianPluginSettingsTab(app : App, val plugin : TestObsidianPlugin) 
             }
 
             plugin.settings.groupBySize = intValue
+            plugin.saveSettings()
+          )
+        )
+
+
+      Setting(containerElement)
+        .setName("Story folder")
+        .setDesc("Location where all the user stories are kept")
+        .addText(text => text
+          .setPlaceholder("Enter the story folder location")
+          .setValue(this.plugin.settings.storyFolder)
+          .onChange(value =>
+            plugin.settings.storyFolder = value
+            plugin.saveSettings()
+          )
+        )
+
+
+      Setting(containerElement)
+        .setName("Solution folder")
+        .setDesc("Location where all the solutions threads are kept")
+        .addText(text => text
+          .setPlaceholder("Enter the solution folder location")
+          .setValue(this.plugin.settings.solutionFolder)
+          .onChange(value =>
+            plugin.settings.solutionFolder = value
             plugin.saveSettings()
           )
         )
