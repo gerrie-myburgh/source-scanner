@@ -1,8 +1,9 @@
+import crosscut.CrossCuttingConcerns
 import docscanner.ScanSource
 import org.scalajs.dom
 import org.scalajs.dom.{HTMLSpanElement, MouseEvent}
 import typings.electron.Electron.ReadBookmark
-import typings.obsidian.mod.{App, Menu, Modal, Notice, Plugin, PluginManifest, PluginSettingTab, Setting, TextComponent, ViewState, WorkspaceLeaf}
+import typings.obsidian.mod.{App, Command, Menu, Modal, Notice, Plugin, PluginManifest, PluginSettingTab, Setting, TextComponent, ViewState}
 import typings.obsidian.obsidianStrings
 import typings.obsidian.publishMod.global.HTMLElement
 import typings.std.{IArguments, Partial, global}
@@ -28,6 +29,9 @@ trait TestObsidianPluginSettings extends  js.Object:
   var sleepLen: Int    = js.native
   var docFQNStart: String = js.native
   var groupBySize : Int = js.native
+  var storyFolder : String = js.native
+  var solutionFolder : String = js.native
+  var mappingFile : String = js.native
 /**
  * The sample plugin
  *
@@ -39,16 +43,31 @@ class TestObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(app
   var intervalHandle : Option[SetIntervalHandle] = None
 
   override def onload(): Unit =
+    println("load plugin source-scanner")
     loadSettings()
 
     addSettingTab(TestObsidianPluginSettingsTab(app, this))
 
-    var sbItem = addStatusBarItem()
+    val sbItem = addStatusBarItem()
     sbItem.setText("Comment scanner OFF")
+
+    addCommand(
+      Command(
+        id = "solution-files-create",
+        name = "Create solution files")
+        .setCallback( () =>
+          if settings.docPath.equalsIgnoreCase("UNDEFINED") ||
+            settings.storyFolder.equalsIgnoreCase("UNDEFINED") ||
+            settings.solutionFolder.equalsIgnoreCase("UNDEFINED") then
+            Notice("Please configure solution scanner portion before using it.", 0.0)
+          else
+            CrossCuttingConcerns(app, settings.storyFolder, settings.solutionFolder, settings.docPath, settings.mappingFile)
+        )
+    )
 
     addRibbonIcon("view",
      "Comment Scanner",
-      (me) =>
+      me =>
         //
         // first make sure that config has been done
         //
@@ -77,6 +96,7 @@ class TestObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(app
     )
 
   override def onunload() : Unit =
+    println("unload plugin source-scanner")
     if intervalHandle.isDefined then
       clearInterval(intervalHandle.get)
       intervalHandle = None
@@ -93,7 +113,10 @@ class TestObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(app
         appExt  = ".java",
         sleepLen = 1000,
         docFQNStart = "UNKNOWN",
-        groupBySize = 10
+        groupBySize = 10,
+        storyFolder = "UNDEFINED",
+        solutionFolder = "UNDEFINED",
+        mappingFile = "UNDEFINED"
       )
 
       settings = js.Object.assign(
@@ -224,6 +247,43 @@ class TestObsidianPluginSettingsTab(app : App, val plugin : TestObsidianPlugin) 
           )
         )
 
+
+      Setting(containerElement)
+        .setName("Story folder")
+        .setDesc("Location where all the user stories are kept")
+        .addText(text => text
+          .setPlaceholder("Enter the story folder location")
+          .setValue(this.plugin.settings.storyFolder)
+          .onChange(value =>
+            plugin.settings.storyFolder = value
+            plugin.saveSettings()
+          )
+        )
+
+
+      Setting(containerElement)
+        .setName("Solution folder")
+        .setDesc("Location where all the solutions threads are kept")
+        .addText(text => text
+          .setPlaceholder("Enter the solution folder location")
+          .setValue(this.plugin.settings.solutionFolder)
+          .onChange(value =>
+            plugin.settings.solutionFolder = value
+            plugin.saveSettings()
+          )
+        )
+
+      val mappingSetting = Setting(containerElement)
+        .setName("Marker to folder mapping")
+        .setDesc("Mapping definition from marker to folder/file-name")
+        .addText(text => text
+          .setPlaceholder("Enter the mapping file name and location")
+          .setValue(this.plugin.settings.mappingFile)
+          .onChange(value =>
+            plugin.settings.mappingFile = value
+            plugin.saveSettings()
+          )
+        )
 /**
  * dummy main object
  */

@@ -15,6 +15,7 @@ import typings.node.fsMod.PathLike
 import typings.node.anon.*
 import typings.obsidian.mod
 import typings.obsidian.mod.FileSystemAdapter
+import utils.{Lexer, Utils}
 
 import concurrent.ExecutionContext.Implicits.global
 import scala.collection.mutable
@@ -30,7 +31,8 @@ object ScanSource:
   private var appPath : String = _    // application path
   private var ext : String = _        // the source file name extension
   private var work : String = _       // start path segment of the source file name
-  private var docPath : String = _    // document path
+  private var docPath : String = _    // document path abs path
+  private var relDocPath : String = _ // document path abs rel from vault root
   private var groupBySize : Int = _   // number of documents to process at a time
   //
   //
@@ -47,6 +49,9 @@ object ScanSource:
   private var docFileListWithExt : List[String] = _
 
   private val srcAndDocLink = mutable.Set[ DOC ]() // docs that have a source
+  private val docAndContentString = mutable.HashMap[String, String]() // all documents created with the content
+
+
 
   /**
    * ## apply
@@ -78,6 +83,7 @@ object ScanSource:
     ext = _ext
     work = _work
     docPath = _docPath
+    relDocPath = _docPath
     sleepLength = _sleepLength
     groupBySize = _groupBySize
     //
@@ -94,7 +100,7 @@ object ScanSource:
     // do work in phases - get all the source files.
     //
     if phaseCount == 1 then
-      appFileListWithExt = walk(appPath
+      appFileListWithExt = Utils.walk(appPath
         .asInstanceOf[String])
         .filter(file => file.endsWith(ext))
         .grouped(10)
@@ -103,7 +109,7 @@ object ScanSource:
     // get list of document files
     //
     if phaseCount == 2 then
-      docFileListWithExt = walk(docPath
+      docFileListWithExt = Utils.walk(docPath
         .asInstanceOf[String])
         .filter(file => file.endsWith(".md"))
     //
@@ -114,7 +120,8 @@ object ScanSource:
     if phaseCount == 3 then
       if appFileListWithExt.nonEmpty then
         appFileListWithExt.head.foreach(srcFile =>
-          val documentNameAndPath = s"$docPath$separator${createDocNameFromSourceName(srcFile)}"
+          val docName = createDocNameFromSourceName(srcFile)
+          val documentNameAndPath = s"$docPath$separator$docName"
           srcAndDocLink += documentNameAndPath
           //
           // if the document file does not exist then create an empty one
@@ -141,17 +148,18 @@ object ScanSource:
               val srcLines = fsMod.readFileSync(srcFile, l(encoding = "utf8", flag = "r")
                 .asInstanceOf[ObjectEncodingOptionsflagEncoding])
                 .asInstanceOf[String]
-                .split("\r?\n")
 
-              fsMod.writeFile(documentNameAndPath, s"[Source](file:$srcFile)\n", err => ())
-              fsMod.appendFile(documentNameAndPath, getBRulesComment(srcLines.toList).mkString("\n"), err => ())
+              val commentString = Lexer(srcLines)
+              docAndContentString += ( s"$relDocPath${Utils.separator}$docName".dropRight(3) -> commentString )
+
+              fsMod.writeFileSync(documentNameAndPath, s"[Source](file:$srcFile)\n\n")
+              fsMod.appendFileSync(documentNameAndPath, commentString)
           } catch {
             case ex : js.JavaScriptException => println("source removed")
           }
         )
         appFileListWithExt = appFileListWithExt.drop(1)
         phaseCount = 2
-
 
     if phaseCount == 4 then
       //
@@ -163,31 +171,9 @@ object ScanSource:
       )
       srcAndDocLink.clear()
       phaseCount = 0
+      docAndContentString.clear()
 
     phaseCount += 1
-
-  /**
-   *  get all files below dir recursively
-   * @param dir the start folder
-   * @return list of files contained in dir
-   */
-  private def walk(dir: String) : List[String] =
-
-    val files= mutable.ListBuffer[String]()
-
-    def walkRecurse(dir: String) : Unit =
-      val dirFiles = fsMod.readdirSync(dir).toList
-      dirFiles.foreach(file => {
-        val p  = path.join(dir, file).asInstanceOf[PathLike]
-        val stat = fsMod.lstatSync(p)
-        if stat.get.isDirectory() then
-          walkRecurse(s"$dir$separator$file")
-        else
-          files += s"$dir$separator$file"
-      })
-
-    walkRecurse(dir)
-    files.toList
 
   /**
    * construct the document name given the source file name
