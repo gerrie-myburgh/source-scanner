@@ -31,6 +31,7 @@ trait TestObsidianPluginSettings extends  js.Object:
   var groupBySize : Int = js.native
   var storyFolder : String = js.native
   var solutionFolder : String = js.native
+  var mappingFile : String = js.native
 /**
  * The sample plugin
  *
@@ -60,7 +61,7 @@ class TestObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(app
             settings.solutionFolder.equalsIgnoreCase("UNDEFINED") then
             Notice("Please configure solution scanner portion before using it.", 0.0)
           else
-            CrossCuttingConcerns(app, settings.storyFolder, settings.solutionFolder, settings.docPath)
+            CrossCuttingConcerns(app, settings.storyFolder, settings.solutionFolder, settings.docPath, settings.mappingFile)
         )
     )
 
@@ -114,7 +115,8 @@ class TestObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(app
         docFQNStart = "UNKNOWN",
         groupBySize = 10,
         storyFolder = "UNDEFINED",
-        solutionFolder = "UNDEFINED"
+        solutionFolder = "UNDEFINED",
+        mappingFile = "UNDEFINED"
       )
 
       settings = js.Object.assign(
@@ -271,6 +273,17 @@ class TestObsidianPluginSettingsTab(app : App, val plugin : TestObsidianPlugin) 
           )
         )
 
+      val mappingSetting = Setting(containerElement)
+        .setName("Marker to folder mapping")
+        .setDesc("Mapping definition from marker to folder/file-name")
+        .addText(text => text
+          .setPlaceholder("Enter the mapping file name and location")
+          .setValue(this.plugin.settings.mappingFile)
+          .onChange(value =>
+            plugin.settings.mappingFile = value
+            plugin.saveSettings()
+          )
+        )
 /**
  * dummy main object
  */

@@ -15,8 +15,7 @@ import typings.node.fsMod.PathLike
 import typings.node.anon.*
 import typings.obsidian.mod
 import typings.obsidian.mod.FileSystemAdapter
-import typings.typescript.mod.OutliningSpan
-import utils.Utils
+import utils.{Lexer, Utils}
 
 import concurrent.ExecutionContext.Implicits.global
 import scala.collection.mutable
@@ -149,13 +148,12 @@ object ScanSource:
               val srcLines = fsMod.readFileSync(srcFile, l(encoding = "utf8", flag = "r")
                 .asInstanceOf[ObjectEncodingOptionsflagEncoding])
                 .asInstanceOf[String]
-                .split("\r?\n")
 
-              val commentString =  getBRulesComment(srcLines.toList).mkString("\n")
+              val commentString = Lexer(srcLines)
               docAndContentString += ( s"$relDocPath${Utils.separator}$docName".dropRight(3) -> commentString )
 
-              fsMod.writeFile(documentNameAndPath, s"[Source](file:$srcFile)\n", err => ())
-              fsMod.appendFile(documentNameAndPath, commentString, err => ())
+              fsMod.writeFileSync(documentNameAndPath, s"[Source](file:$srcFile)\n\n")
+              fsMod.appendFileSync(documentNameAndPath, commentString)
           } catch {
             case ex : js.JavaScriptException => println("source removed")
           }
