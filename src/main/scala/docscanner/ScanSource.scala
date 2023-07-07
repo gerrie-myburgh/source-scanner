@@ -1,5 +1,7 @@
 package docscanner
 
+import docscanner.ScanSource.gitBranchName
+
 import java.util.Collections.*
 import scala.jdk.CollectionConverters.*
 import scala.scalajs.js.timers.SetIntervalHandle
@@ -106,7 +108,7 @@ object ScanSource:
         val branchName = fsMod.readFileSync(Utils.branchNameLocation.get + Utils.separator + "current-branch.txt", l(encoding = "utf8", flag = "r")
           .asInstanceOf[ObjectEncodingOptionsflagEncoding])
           .asInstanceOf[String]
-        println(branchName)
+        println(branchName +  " "  + gitBranchName)
         if branchName.isEmpty || !branchName.equalsIgnoreCase(gitBranchName) then return ()
 
     //
