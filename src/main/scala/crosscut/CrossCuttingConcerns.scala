@@ -21,17 +21,14 @@ object CrossCuttingConcerns:
   private type PATHNAME  = String
 
   private val markerRegExp = """( |\t|^)\^([a-zA-Z0-9]+\-)*[a-zA-Z0-9]+\-[0-9]+""".r
-  def apply(app : mod.App, storyFolder : String,  solutionFolder : String, docFolder: String, mappingFile : String) : Unit =
+  def apply(app : mod.App, storyFolder : String,  solutionFolder : String, docFolder: String, markerMapping : String) : Unit =
     //
     // if a mapping file has been defined then get the mappings : format is 'marker'='mapping-value'
     //
     val vaultPath = app.vault.adapter.asInstanceOf[FileSystemAdapter].getBasePath()
 
-    val markerMappings : Map[String, String] = if !mappingFile.equalsIgnoreCase("UNDEFINED") && mappingFile.nonEmpty then
-      val markerFileLocation = s"$vaultPath${Utils.separator}$mappingFile"
-      fsMod.readFileSync(markerFileLocation, l(encoding = "utf8", flag = "r")
-        .asInstanceOf[ObjectEncodingOptionsflagEncoding])
-        .asInstanceOf[String]
+    val markerMappings : Map[String, String] = if markerMapping.nonEmpty then
+      markerMapping
         .split("\n")
         .map( value =>
           if value.contains("=") then

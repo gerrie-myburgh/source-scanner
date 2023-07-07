@@ -30,7 +30,7 @@ trait TestObsidianPluginSettings extends  js.Object:
   var groupBySize : Int = js.native
   var storyFolder : String = js.native
   var solutionFolder : String = js.native
-  var mappingFile : String = js.native
+  var markerMappings : String = js.native
 /**
  * The sample plugin
  *
@@ -60,7 +60,7 @@ class TestObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(app
             settings.solutionFolder.equalsIgnoreCase("UNDEFINED") then
             Notice("Please configure solution scanner portion before using it.", 0.0)
           else
-            CrossCuttingConcerns(app, settings.storyFolder, settings.solutionFolder, settings.docPath, settings.mappingFile)
+            CrossCuttingConcerns(app, settings.storyFolder, settings.solutionFolder, settings.docPath, settings.markerMappings)
         )
     )
 
@@ -113,7 +113,7 @@ class TestObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(app
         groupBySize = 10,
         storyFolder = "UNDEFINED",
         solutionFolder = "UNDEFINED",
-        mappingFile = "UNDEFINED"
+        markerMappings = "UNDEFINED"
       )
 
       settings = js.Object.assign(
@@ -259,13 +259,13 @@ class TestObsidianPluginSettingsTab(app : App, val plugin : TestObsidianPlugin) 
         )
 
       val mappingSetting = Setting(containerElement)
-        .setName("Marker to folder mapping")
-        .setDesc("Mapping definition from marker to folder/file-name")
-        .addText(text => text
-          .setPlaceholder("Enter the mapping file name and location")
-          .setValue(this.plugin.settings.mappingFile)
+        .setName("Mappin of markers to md file names")
+        .setDesc("Mapping definition from marker to md name")
+        .addTextArea(text => text
+          .setPlaceholder("Enter the mappings")
+          .setValue(this.plugin.settings.markerMappings)
           .onChange(value =>
-            plugin.settings.mappingFile = value
+            plugin.settings.markerMappings = value
             plugin.saveSettings()
           )
         )
