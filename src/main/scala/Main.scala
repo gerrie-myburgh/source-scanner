@@ -27,7 +27,6 @@ trait TestObsidianPluginSettings extends  js.Object:
   var docPath : String = js.native
   var appExt  : String = js.native
   var sleepLen: Int    = js.native
-  var docFQNStart: String = js.native
   var groupBySize : Int = js.native
   var storyFolder : String = js.native
   var solutionFolder : String = js.native
@@ -72,8 +71,7 @@ class TestObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(app
         // first make sure that config has been done
         //
         if settings.appPath.equalsIgnoreCase("UNDEFINED") ||
-          settings.docPath.equalsIgnoreCase("UNDEFINED") ||
-          settings.docFQNStart.equalsIgnoreCase("UNKNOWN") then
+          settings.docPath.equalsIgnoreCase("UNDEFINED") then
           Notice("Please configure code scanner before starting it.", 0.0)
         else
           //
@@ -85,7 +83,6 @@ class TestObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(app
               ScanSource(app,
                 settings.appPath,
                 settings.appExt,
-                settings.docFQNStart,
                 settings.docPath,
                 settings.sleepLen,
                 settings.groupBySize))
@@ -172,18 +169,6 @@ class TestObsidianPluginSettingsTab(app : App, val plugin : TestObsidianPlugin) 
               appPathSetting.components.first().get.asInstanceOf[TextComponent].setValue(pathName.toString)
           )
         )
-
-      Setting(containerElement)
-          .setName("Source search segment")
-          .setDesc("Source path segment where the doc name must be constructed from")
-          .addText(text => text
-            .setPlaceholder("Enter the segment string")
-            .setValue(this.plugin.settings.docFQNStart)
-            .onChange(value =>
-              plugin.settings.docFQNStart = value
-              plugin.saveSettings()
-            )
-          )
 
       Setting(containerElement)
           .setName("Documentation Path")

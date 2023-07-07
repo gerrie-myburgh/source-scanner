@@ -30,7 +30,6 @@ object ScanSource:
   private var running : Boolean = true
   private var appPath : String = _    // application path
   private var ext : String = _        // the source file name extension
-  private var work : String = _       // start path segment of the source file name
   private var docPath : String = _    // document path abs path
   private var relDocPath : String = _ // document path abs rel from vault root
   private var groupBySize : Int = _   // number of documents to process at a time
@@ -73,7 +72,7 @@ object ScanSource:
    * @param _sleepLength
    * @return
    */
-  def apply(app : mod.App, _appPath : String, _ext : String, _work : String, _docPath : String, _sleepLength : Int, _groupBySize : Int): SetIntervalHandle =
+  def apply(app : mod.App, _appPath : String, _ext : String, _docPath : String, _sleepLength : Int, _groupBySize : Int): SetIntervalHandle =
     //
     // initialization
     //
@@ -81,7 +80,6 @@ object ScanSource:
 
     appPath = _appPath
     ext = _ext
-    work = _work
     docPath = _docPath
     relDocPath = _docPath
     sleepLength = _sleepLength
@@ -181,22 +179,9 @@ object ScanSource:
    * @return the document name
    */
   private def createDocNameFromSourceName(sourceFile : String) =
-    val filePath = sourceFile.split(separator).reverse.toList
-    var stop = false
-    val nameOfDoc = mutable.ListBuffer[String]()
-    //
-    // doc name is the fully qualified name from the work segment to the end of the file path
-    //
-    filePath.foreach(seg =>
-      if seg.equalsIgnoreCase(work) then
-        stop = true
-      if !stop then
-        nameOfDoc += seg
-    )
-    //
-    // construct the name of the document
-    //
-    s"${nameOfDoc.reverse.mkString(".").dropRight(ext.length)}.md"
+    val docPath = s"${sourceFile.drop(appPath.length + 1).dropRight(ext.length)}.md"
+    val docName = docPath.replace('/', '.')
+    docName
 
     /**
      * ## getBRulesComment
