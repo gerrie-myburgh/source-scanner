@@ -99,11 +99,15 @@ object ScanSource:
     //
     // if the current branch is the defined branch then go ahead an process else do not process
     //
-    if phaseCount == 0 && Utils.branchNameLocation.nonEmpty then
-      val branchName = fsMod.readFileSync(Utils.branchNameLocation.get + Utils.separator + "current-branch.txt", l(encoding = "utf8", flag = "r")
-        .asInstanceOf[ObjectEncodingOptionsflagEncoding])
-        .asInstanceOf[String]
-      if branchName.isEmpty && !branchName.equalsIgnoreCase(gitBranchName) then return ()
+    if phaseCount == 0 then
+      if Utils.branchNameLocation.isEmpty then
+        Utils.getBranchNameFileLocation(appPath)
+      if  Utils.branchNameLocation.isDefined then
+        val branchName = fsMod.readFileSync(Utils.branchNameLocation.get + Utils.separator + "current-branch.txt", l(encoding = "utf8", flag = "r")
+          .asInstanceOf[ObjectEncodingOptionsflagEncoding])
+          .asInstanceOf[String]
+        println(branchName)
+        if branchName.isEmpty && !branchName.equalsIgnoreCase(gitBranchName) then return ()
 
     //
     // do work in phases - get all the source files.
