@@ -258,8 +258,8 @@ class TestObsidianPluginSettingsTab(app : App, val plugin : TestObsidianPlugin) 
           )
         )
 
-      val mappingSetting = Setting(containerElement)
-        .setName("Mappin of markers to md file names")
+      Setting(containerElement)
+        .setName("Mapping of markers to md file names")
         .setDesc("Mapping definition from marker to md name")
         .addTextArea(text => text
           .setPlaceholder("Enter the mappings")
