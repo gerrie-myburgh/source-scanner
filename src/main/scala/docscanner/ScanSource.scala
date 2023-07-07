@@ -103,7 +103,7 @@ object ScanSource:
    *
    * @return
    */
-  private def isBranchStillActive() : Boolean =
+  private def isBranchStillActive: Boolean =
     if Utils.branchNameLocation.isEmpty then
       Utils.getBranchNameFileLocation(appPath)
     if Utils.branchNameLocation.isDefined then
@@ -112,13 +112,15 @@ object ScanSource:
         .asInstanceOf[String]
       if branchName.isEmpty || !branchName.trim.equalsIgnoreCase(gitBranchName.trim) then false
       else true
+    else
+      false
 
   private def run() : Unit =
     //
     // if the current branch is the defined branch then go ahead an process else do not process
     //
     if phaseCount == 0 then
-      if !isBranchStillActive() then return()
+      if !isBranchStillActive then return()
 
     //
     // do work in phases - get all the source files.
@@ -165,7 +167,7 @@ object ScanSource:
 
             val srcModTime = srcStat.get.mtimeMs
 
-            if ( docStat._1 || docStat._2.get.mtimeMs < srcModTime ) && isBranchStillActive() then
+            if ( docStat._1 || docStat._2.get.mtimeMs < srcModTime ) && isBranchStillActive then
               //
               // get comment lines from the srcFile then open doc file for writing and write the lines to it
               //
@@ -185,7 +187,7 @@ object ScanSource:
         appFileListWithExt = appFileListWithExt.drop(1)
         phaseCount = 2
 
-    if phaseCount == 4 && isBranchStillActive() then
+    if phaseCount == 4 && isBranchStillActive then
       //
       // every document that does not have a source file must be removed
       //
