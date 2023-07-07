@@ -97,6 +97,12 @@ object ScanSource:
 
     timers.setInterval(sleepLength)(this.run())
 
+  /**
+   * ## private def isBranchStillActive() : Boolean =
+   * check if the current branch is still the active branch for the scanner
+   *
+   * @return
+   */
   private def isBranchStillActive() : Boolean =
     if Utils.branchNameLocation.isEmpty then
       Utils.getBranchNameFileLocation(appPath)
@@ -159,7 +165,7 @@ object ScanSource:
 
             val srcModTime = srcStat.get.mtimeMs
 
-            if docStat._1 || docStat._2.get.mtimeMs < srcModTime then
+            if ( docStat._1 || docStat._2.get.mtimeMs < srcModTime ) && isBranchStillActive() then
               //
               // get comment lines from the srcFile then open doc file for writing and write the lines to it
               //
@@ -179,7 +185,7 @@ object ScanSource:
         appFileListWithExt = appFileListWithExt.drop(1)
         phaseCount = 2
 
-    if phaseCount == 4 then
+    if phaseCount == 4 && isBranchStillActive() then
       //
       // every document that does not have a source file must be removed
       //
