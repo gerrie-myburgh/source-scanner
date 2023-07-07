@@ -1,12 +1,14 @@
 import crosscut.CrossCuttingConcerns
 import docscanner.ScanSource
 import org.scalajs.dom
+import org.scalajs.dom.window.alert
 import org.scalajs.dom.{HTMLSpanElement, MouseEvent}
 import typings.electron.Electron.ReadBookmark
 import typings.obsidian.mod.{App, Command, Menu, Modal, Notice, Plugin, PluginManifest, PluginSettingTab, Setting, TextComponent, ViewState}
 import typings.obsidian.obsidianStrings
 import typings.obsidian.publishMod.global.HTMLElement
 import typings.std.{IArguments, Partial, global}
+import utils.Utils
 import utils.Utils.VIEW_TYPE_EXAMPLE
 
 import scala.concurrent.Future
@@ -24,6 +26,7 @@ import scala.language.postfixOps
 @js.native
 trait TestObsidianPluginSettings extends  js.Object:
   var appPath : String = js.native
+  var branch : String = js.native
   var docPath : String = js.native
   var appExt  : String = js.native
   var sleepLen: Int    = js.native
@@ -106,6 +109,7 @@ class TestObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(app
 
       val default = l(
         appPath = "UNDEFINED",
+        branch = "master",
         docPath = "UNDEFINED",
         appExt  = ".java",
         sleepLen = 1000,
@@ -152,6 +156,12 @@ class TestObsidianPluginSettingsTab(app : App, val plugin : TestObsidianPlugin) 
           .setPlaceholder("Enter the application path")
           .setValue(this.plugin.settings.appPath)
           .onChange(value =>
+
+            if Utils.getBranchNameFileLocation(value) then
+              alert(s" git found in ${Utils.branchNameLocation.get}")
+            else
+              alert(s"git not found in app path.")
+
             plugin.settings.appPath = value
             plugin.saveSettings()
           )
@@ -165,8 +175,27 @@ class TestObsidianPluginSettingsTab(app : App, val plugin : TestObsidianPlugin) 
             )
             if !js.isUndefined(pathName) then
               plugin.settings.appPath = pathName.toString
+
+              if Utils.getBranchNameFileLocation(pathName.toString) then
+                alert(s" git found in ${Utils.branchNameLocation.get}")
+              else
+                alert(s"git not found in app path.")
+
+
               plugin.saveSettings()
               appPathSetting.components.first().get.asInstanceOf[TextComponent].setValue(pathName.toString)
+          )
+        )
+
+      Setting(containerElement)
+        .setName("GIT Branch name")
+        .setDesc("The name of the git branch to scan")
+        .addText(text => text
+          .setPlaceholder("Enter the git branch name")
+          .setValue(this.plugin.settings.branch)
+          .onChange(value =>
+            plugin.settings.branch = value
+            plugin.saveSettings()
           )
         )
 

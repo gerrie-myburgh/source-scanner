@@ -12,6 +12,32 @@ object Utils:
   private val path = g.require("path")
   val separator : String = path.sep.asInstanceOf[String]
 
+  //
+  // The name of the file location of the current-branch.txt file
+  //
+  var branchNameLocation : Option[String] = None
+
+  /**
+   * traverse from the tail of the app path to the root looking for the .git folder. location
+   * @param appPath
+   * @Return - true of found false if not found
+   */
+  def getBranchNameFileLocation(appPath : String) : Boolean =
+    var path = appPath.split(separator)
+    while
+      val folderName = walkFoldersBackwards(path.mkString(separator))
+      println(folderName)
+      path.length > 1 && !folderName.exists(_.endsWith(".git"))
+    do
+      path = path.dropRight(1)
+
+    if path.length > 1 then
+      branchNameLocation = Some(path.mkString(separator))
+      true
+    else
+      branchNameLocation = None
+      false
+
   /**
    * get all files below dir recursively
    *
@@ -33,8 +59,28 @@ object Utils:
           files += s"$dir$separator$file"
       })
 
-    walkRecurse(dir)
+    walkRecurse(dir.trim)
     files.toList
 
+  /**
+   * get all folder names in the current location
+   *
+   * @param dir the start folder
+   * @return list of files contained in dir
+   */
+  def walkFoldersBackwards(dir: String): List[String] =
 
+    val files = mutable.ListBuffer[String]()
+
+    def walkRecurse(dir: String): Unit =
+      val dirFiles = fsMod.readdirSync(dir).toList
+      dirFiles.foreach(file => {
+        val p = path.join(dir, file).asInstanceOf[PathLike]
+        val stat = fsMod.lstatSync(p)
+        if stat.get.isDirectory() then
+          files += s"$dir$separator$file"
+      })
+
+    walkRecurse(dir)
+    files.toList
 
