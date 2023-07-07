@@ -108,8 +108,8 @@ object ScanSource:
         val branchName = fsMod.readFileSync(Utils.branchNameLocation.get + Utils.separator + "current-branch.txt", l(encoding = "utf8", flag = "r")
           .asInstanceOf[ObjectEncodingOptionsflagEncoding])
           .asInstanceOf[String]
-        println(branchName +  " "  + gitBranchName)
-        if branchName.isEmpty || !branchName.equalsIgnoreCase(gitBranchName) then return ()
+        println(branchName +  "->"  + gitBranchName)
+        if branchName.isEmpty || !branchName.trim.equalsIgnoreCase(gitBranchName.trim) then return ()
 
     //
     // do work in phases - get all the source files.

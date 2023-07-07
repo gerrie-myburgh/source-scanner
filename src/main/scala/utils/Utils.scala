@@ -26,7 +26,6 @@ object Utils:
     var path = appPath.split(separator)
     while
       val folderName = walkFoldersBackwards(path.mkString(separator))
-      println(folderName)
       path.length > 1 && !folderName.exists(_.endsWith(".git"))
     do
       path = path.dropRight(1)
