@@ -107,7 +107,7 @@ object ScanSource:
           .asInstanceOf[ObjectEncodingOptionsflagEncoding])
           .asInstanceOf[String]
         println(branchName)
-        if branchName.isEmpty && !branchName.equalsIgnoreCase(gitBranchName) then return ()
+        if branchName.isEmpty || !branchName.equalsIgnoreCase(gitBranchName) then return ()
 
     //
     // do work in phases - get all the source files.
