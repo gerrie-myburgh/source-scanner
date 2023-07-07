@@ -27,6 +27,7 @@ object ScanSource:
 
   private val separator : String = path.sep.asInstanceOf[String]
 
+  private var gitBranchName : String = _ // the working branch defined in the settings
   private var running : Boolean = true
   private var appPath : String = _    // application path
   private var ext : String = _        // the source file name extension
@@ -72,13 +73,14 @@ object ScanSource:
    * @param _sleepLength
    * @return
    */
-  def apply(app : mod.App, _appPath : String, _ext : String, _docPath : String, _sleepLength : Int, _groupBySize : Int): SetIntervalHandle =
+  def apply(app : mod.App, _appPath : String, _ext : String, _docPath : String, _sleepLength : Int, _groupBySize : Int, _gitBranchName : String): SetIntervalHandle =
     //
     // initialization
     //
     path.basename("")
 
     appPath = _appPath
+    gitBranchName = _gitBranchName
     ext = _ext
     docPath = _docPath
     relDocPath = _docPath
@@ -94,6 +96,15 @@ object ScanSource:
     timers.setInterval(sleepLength)(this.run())
 
   private def run() : Unit =
+    //
+    // if the current branch is the defined branch then go ahead an process else do not process
+    //
+    if phaseCount == 0 && Utils.branchNameLocation.nonEmpty then
+      val branchName = fsMod.readFileSync(Utils.branchNameLocation.get + Utils.separator + "current-branch.txt", l(encoding = "utf8", flag = "r")
+        .asInstanceOf[ObjectEncodingOptionsflagEncoding])
+        .asInstanceOf[String]
+      if branchName.isEmpty && !branchName.equalsIgnoreCase(gitBranchName) then return ()
+
     //
     // do work in phases - get all the source files.
     //
@@ -168,7 +179,7 @@ object ScanSource:
           fsMod.unlinkSync(fileName)
       )
       srcAndDocLink.clear()
-      phaseCount = 0
+      phaseCount = -1
       docAndContentString.clear()
 
     phaseCount += 1
@@ -182,55 +193,3 @@ object ScanSource:
     val docPath = s"${sourceFile.drop(appPath.length + 1).dropRight(ext.length)}.md"
     val docName = docPath.replace('/', '.')
     docName
-
-    /**
-     * ## getBRulesComment
-     * Pick up all block comments and business line comments return then to the caller.
-     *
-     * @param code the code to scan
-     * @return the list of document lines
-     */
-  private def getBRulesComment(code : List[String]) : List[String] =
-    var inComment = false
-
-    val pattern1 = "^.*/\\*\\*.*$".r // start of block comment
-    val pattern2 = "^.*\\*/.*$".r    // end of block comment
-    val pattern3 = "^.*//bus.*$".r   // start of line comment WARNING FIX tis and next lines
-
-    val inStringComment1 = """"[^"]*/\*\*[^"]*"""".r
-    val inStringComment2 = """"[^"]*//bus[^"]*"""".r
-
-    code.filter(line => {
-      //
-      // filter out the non comment lines
-      //
-      if (pattern1.matches(line) && inStringComment1.findAllIn(line).isEmpty) inComment = true
-      val comment = inComment || (pattern3.matches(line) && inStringComment2.findAllIn(line).isEmpty)
-      if (pattern2.matches(line)) inComment = false
-      comment
-    })
-      .map(line => {
-        //
-        // depending on the type of comment get the text in the comment
-        //
-        if (pattern1.matches(line)) {
-
-          val start = line.indexOf("/**")
-          line.substring(start + 3) //+ "\n"
-
-        } else if (pattern2.matches(line)) {
-
-          ""
-
-        } else if (pattern3.matches(line)) {
-
-          val start = line.indexOf("//bus")
-          line.substring(start + 5) //+ "\n"
-
-        } else {
-
-          val start = line.indexOf("*")
-          line.substring(start + 1) //+ "\n"
-
-        }
-      })

@@ -88,7 +88,8 @@ class TestObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(app
                 settings.appExt,
                 settings.docPath,
                 settings.sleepLen,
-                settings.groupBySize))
+                settings.groupBySize,
+                settings.branch))
           else
             sbItem.setText("Comment scanner OFF")
             clearInterval(intervalHandle.get)
