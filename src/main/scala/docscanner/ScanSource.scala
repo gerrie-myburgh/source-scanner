@@ -97,18 +97,22 @@ object ScanSource:
 
     timers.setInterval(sleepLength)(this.run())
 
+  private def isBranchStillActive() : Boolean =
+    if Utils.branchNameLocation.isEmpty then
+      Utils.getBranchNameFileLocation(appPath)
+    if Utils.branchNameLocation.isDefined then
+      val branchName = fsMod.readFileSync(Utils.branchNameLocation.get + Utils.separator + "current-branch.txt", l(encoding = "utf8", flag = "r")
+        .asInstanceOf[ObjectEncodingOptionsflagEncoding])
+        .asInstanceOf[String]
+      if branchName.isEmpty || !branchName.trim.equalsIgnoreCase(gitBranchName.trim) then false
+      else true
+
   private def run() : Unit =
     //
     // if the current branch is the defined branch then go ahead an process else do not process
     //
     if phaseCount == 0 then
-      if Utils.branchNameLocation.isEmpty then
-        Utils.getBranchNameFileLocation(appPath)
-      if  Utils.branchNameLocation.isDefined then
-        val branchName = fsMod.readFileSync(Utils.branchNameLocation.get + Utils.separator + "current-branch.txt", l(encoding = "utf8", flag = "r")
-          .asInstanceOf[ObjectEncodingOptionsflagEncoding])
-          .asInstanceOf[String]
-        if branchName.isEmpty || !branchName.trim.equalsIgnoreCase(gitBranchName.trim) then return ()
+      if !isBranchStillActive() then return()
 
     //
     // do work in phases - get all the source files.
