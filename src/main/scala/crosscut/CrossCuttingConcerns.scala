@@ -21,17 +21,14 @@ object CrossCuttingConcerns:
   private type PATHNAME  = String
 
   private val markerRegExp = """( |\t|^)\^([a-zA-Z0-9]+\-)*[a-zA-Z0-9]+\-[0-9]+""".r
-  def apply(app : mod.App, storyFolder : String,  solutionFolder : String, docFolder: String, mappingFile : String) : Unit =
+  def apply(app : mod.App, storyFolder : String,  solutionFolder : String, docFolder: String, markerMapping : String) : Unit =
     //
-    // if a mapping file has been defined then get the mappings : format is 'marker'='mapping-value'
+    //bus if a mapping string has been defined then get the mappings : format is 'marker'='mapping-value'
     //
     val vaultPath = app.vault.adapter.asInstanceOf[FileSystemAdapter].getBasePath()
 
-    val markerMappings : Map[String, String] = if !mappingFile.equalsIgnoreCase("UNDEFINED") && mappingFile.nonEmpty then
-      val markerFileLocation = s"$vaultPath${Utils.separator}$mappingFile"
-      fsMod.readFileSync(markerFileLocation, l(encoding = "utf8", flag = "r")
-        .asInstanceOf[ObjectEncodingOptionsflagEncoding])
-        .asInstanceOf[String]
+    val markerMappings : Map[String, String] = if markerMapping.nonEmpty then
+      markerMapping
         .split("\n")
         .map( value =>
           if value.contains("=") then
@@ -56,7 +53,7 @@ object CrossCuttingConcerns:
     val docPath = s"$vaultPath${Utils.separator}$docFolder"
     val docFiles = Utils.walk(docPath).filter(name => name.endsWith(".md")).toList
     //
-    // remove all the solution files
+    //bus remove all the solution files
     //
     val solPath = s"$vaultPath${Utils.separator}$solutionFolder"
     val solFiles = Utils.walk(solPath).filter(name => name.endsWith(".md")).toList
@@ -129,8 +126,15 @@ object CrossCuttingConcerns:
       // remove solution file it exists and recreate with new values.
       //
       val marker = markers.head.drop(1).split("-").dropRight(1).mkString("-")
-      println(marker)
       val solNameWithPath = getSolutionFileName(marker, s"$vaultPath${Utils.separator}$solName", markerMappings)
+      //
+      // create the folder path if required
+      //
+      val pathToCreate = solNameWithPath.split(Utils.separator).dropRight(1).mkString(Utils.separator)
+      fsMod.mkdirSync(pathToCreate, l(recursive =  true).asInstanceOf[fsMod.MakeDirectoryOptions])
+      //
+      // write of the solution text
+      //
       fsMod.writeFile(solNameWithPath, mdString.toString(), err => ())
     )
 
@@ -143,6 +147,7 @@ object CrossCuttingConcerns:
 
   /**
    * given the solution name return the story name, if the story name is in mapping then use that rather
+   *
    * @param solName to use for the story name
    * @return the story name
    */

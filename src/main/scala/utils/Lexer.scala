@@ -1,5 +1,13 @@
 package utils
 
+/**
+ * # object Lexer
+ * The source lexer scans and records all comments that looks like a block comment , allowing nested comments
+ * and line comments marked as //bus up to the first eof or /r or /n. Other characters excluding \" are ignored. String
+ * literals are parsed in order to prevent seeing block comments \/\*\* and \/\/ in string literals as comments.
+ * ^story1-00
+ *
+ */
 object Lexer:
   private var parseString: String = _
   private var idx = 0
@@ -28,7 +36,7 @@ object Lexer:
       ()
 
   private def lineComment() =
-    idx += 1
+    idx += 4
     while
       val ch = getChar
       val inCommentLine = ch._1 && ch._2 != '\n' && ch._2 != '\r'
@@ -36,6 +44,7 @@ object Lexer:
         parsed += ch._2
         true
       else
+        parsed += '\n'
         false
     do
       ()
@@ -67,7 +76,7 @@ object Lexer:
           inBlockComment += 1
           captureCharsUpTo("*/")
         }
-        case '/' if isString("/") => {
+        case '/' if isString("/bus") => {
           lineComment()
         }
         case '"' => {
