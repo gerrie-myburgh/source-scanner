@@ -11,8 +11,8 @@ the comments with the user requirements. The user requirement will be in the for
 
 ## Git dependency
 The plugin depends on git to check that the current branch is the one to be scanned. To do this you need to add the following git hook shell
-script for post-checkout. If you want to fool the code scanner into thinking that the code getting scanned is used version control then create a current-branch.txt
-file in the root of the project and place the name of the branch in die file. This branch name value must be the same as defined in the plugin settings.
+script for post-checkout. If you want to fool the code scanner into thinking that the code getting scanned is using version control then create a current-branch.txt
+file in the root of the project and place the name of the branch in the file. This branch name value must be the same as defined in the plugin settings.
 
 ```agsl
 #!/bin/bash
