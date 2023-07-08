@@ -137,16 +137,16 @@ class ScannerObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(
     data.map(any =>
 
       val default = l(
-        appPath = UNDEFINED,
-        branch = "master",
-        docPath = UNDEFINED,
-        appExt  = ".java",
-        sleepLen = 1000,
+        applicationPath = UNDEFINED,
+        gitBranchToScan = "master",
+        documentPath = UNDEFINED,
+        applicationExtension = UNDEFINED,
+        sleepLength = 1000,
         groupBySize = 10,
         storyFolder = UNDEFINED,
         solutionFolder = UNDEFINED,
-        markerMappings = UNDEFINED,
-        markersPath = "marker-list"
+        markerMappings = "",
+        markersPath = "marker-file"
       )
 
       settings = js.Object.assign(
@@ -355,7 +355,8 @@ class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) ex
 
   /**
    * ## checkValues
-   * Make sure that the settings values are all valid on hide
+   * Make sure that the settings values are all valid
+   * give alert for invalid values
    */
   private def checkValues() : Unit =
 
@@ -373,7 +374,7 @@ class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) ex
 
     if plugin.settings.applicationExtension.length <= 2
       || plugin.settings.applicationExtension.charAt(0) != '.' then
-      alert("Application extension is not length must be > 2 and start with '.'.")
+      alert("Application type length must be > 2 and start with '.'.")
       return ()
 
     val sourceFileList = Utils.walk(plugin.settings.applicationPath)
@@ -406,17 +407,20 @@ class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) ex
       alert("Group size must be greater than 0")
       return ()
 
-    if plugin.settings.markerMappings.split("\r?\n").filter(!_.contains('=')).length > 0 then
+    if plugin.settings.markerMappings.nonEmpty &&
+      plugin.settings.markerMappings.split("\r?\n").filter(!_.contains('=')).length > 0 then
       alert("Marker mappings list has a mapping in it without a '=' sign.")
       return ()
+
+    alert("Values seems fine.")
     ()
 
   private def isDefined(string : String, errorMessage : String) =
     if string.isEmpty || string.equalsIgnoreCase(UNDEFINED) then
       alert(s"${errorMessage} must be defined.")
-      false
-    else
       true
+    else
+      false
 /*
  * dummy main object
  */
