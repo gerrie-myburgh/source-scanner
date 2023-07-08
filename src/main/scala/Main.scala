@@ -26,6 +26,7 @@ import scala.language.postfixOps
 //bus All the variables have been parameterised and is user changeable. ^story2-00
 //bus
 //bus The variables are all updatable in _ScannerPluginSettingsTab_ ^story1-02
+//
 @js.native
 trait TestObsidianPluginSettings extends  js.Object:
   var applicationPath : String = js.native
@@ -45,7 +46,8 @@ trait TestObsidianPluginSettings extends  js.Object:
  */
 @JSExportTopLevel("ScannerObsidianPlugin")
 class ScannerObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(app, manifest):
-
+  private val UNDEFINED = "UNDEFINED"
+  
   var settings : TestObsidianPluginSettings = _
   var intervalHandle : Option[SetIntervalHandle] = None
 
@@ -69,9 +71,9 @@ class ScannerObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(
         id = "solution-files-create",
         name = "Create solution files")
         .setCallback( () =>
-          if settings.documentPath.equalsIgnoreCase("UNDEFINED") ||
-            settings.storyFolder.equalsIgnoreCase("UNDEFINED") ||
-            settings.solutionFolder.equalsIgnoreCase("UNDEFINED") then
+          if settings.documentPath.equalsIgnoreCase(UNDEFINED) ||
+            settings.storyFolder.equalsIgnoreCase(UNDEFINED) ||
+            settings.solutionFolder.equalsIgnoreCase(UNDEFINED) then
             Notice("Please configure solution scanner portion before using it.", 0.0)
           else
             CrossCuttingConcerns(app, settings.storyFolder, settings.solutionFolder, settings.documentPath, settings.markerMappings)
@@ -93,8 +95,8 @@ class ScannerObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(
         //
         // first make sure that config has been done
         //
-        if settings.applicationPath.equalsIgnoreCase("UNDEFINED") ||
-          settings.documentPath.equalsIgnoreCase("UNDEFINED") then
+        if settings.applicationPath.equalsIgnoreCase(UNDEFINED) ||
+          settings.documentPath.equalsIgnoreCase(UNDEFINED) then
           Notice("Please configure code scanner before starting it.", 0.0)
         else
           //
@@ -135,16 +137,15 @@ class ScannerObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(
     data.map(any =>
 
       val default = l(
-        appPath = "UNDEFINED",
+        appPath = UNDEFINED,
         branch = "master",
-        docPath = "UNDEFINED",
+        docPath = UNDEFINED,
         appExt  = ".java",
         sleepLen = 1000,
-        docFQNStart = "UNKNOWN",
         groupBySize = 10,
-        storyFolder = "UNDEFINED",
-        solutionFolder = "UNDEFINED",
-        markerMappings = "UNDEFINED",
+        storyFolder = UNDEFINED,
+        solutionFolder = UNDEFINED,
+        markerMappings = UNDEFINED,
         markersPath = "marker-list"
       )
 
@@ -164,7 +165,12 @@ class ScannerObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(
  * @param plugin using the settings
  */
 class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) extends PluginSettingTab(app, plugin):
+  private val UNDEFINED = "UNDEFINED"
 
+  /**
+   * ## display()
+   * Allow the user to set the parameters
+   */
   override def display() : Unit =
 
     val containerElement = this.containerEl
@@ -339,6 +345,70 @@ class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) ex
           )
         )
 
+  /**
+   * ## hide()
+   * Make sure that the settings values are all valid on hide
+   */
+  override def hide() : Unit =
+
+    if plugin.settings.applicationPath.isEmpty
+      || plugin.settings.applicationPath.equalsIgnoreCase(UNDEFINED) then
+      alert("Application path may not be empty or undefined.")
+      return ()
+
+    if plugin.settings.applicationPath.endsWith(Utils.separator) then
+      plugin.settings.applicationPath = plugin.settings.applicationPath.dropRight(1)
+
+    if plugin.settings.applicationExtension.isEmpty then
+      alert("Application extension is not defined.")
+      return ()
+
+    if plugin.settings.applicationExtension.length <= 2
+      || plugin.settings.applicationExtension.charAt(0) != '.' then
+      alert("Application extension is not length must be > 2 and start with '.'.")
+      return ()
+
+    val sourceFileList = Utils.walk(plugin.settings.applicationPath)
+      .toList
+      .filter(_.endsWith(plugin.settings.applicationExtension))
+    if sourceFileList.isEmpty then
+      alert("There are no source files in the application path.")
+      return ()
+
+    if isDefined(plugin.settings.gitBranchToScan, "GIT Branch") then
+      return ()
+
+    if isDefined(plugin.settings.documentPath, "Document Path") then
+      return ()
+
+    if isDefined(plugin.settings.storyFolder, "Story Folder") then
+      return ()
+
+    if isDefined(plugin.settings.solutionFolder, "Solution Folder") then
+      return ()
+
+    if isDefined(plugin.settings.markersPath, "Markers Path") then
+      return ()
+
+    if plugin.settings.sleepLength <= 500 then
+      alert("Sleep length must be greater than 500 milliseconds.")
+      return ()
+
+    if plugin.settings.groupBySize <= 0 then
+      alert("Group size must be greater than 0")
+      return ()
+
+    if plugin.settings.markerMappings.split("\r?\n").filter(!_.contains('=')).length > 0 then
+      alert("Marker mappings list has a mapping in it without a '=' sign.")
+      return ()
+    ()
+
+  private def isDefined(string : String, errorMessage : String) =
+    if string.isEmpty || string.equalsIgnoreCase(UNDEFINED) then
+      alert(s"${errorMessage} must be defined.")
+      false
+    else
+      true
 /*
  * dummy main object
  */
