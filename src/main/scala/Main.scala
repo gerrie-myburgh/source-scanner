@@ -1,12 +1,14 @@
+import crosscut.{CrossCuttingConcerns, MarkerGroupList}
 import docscanner.ScanSource
 import org.scalajs.dom
+import org.scalajs.dom.window.alert
 import org.scalajs.dom.{HTMLSpanElement, MouseEvent}
 import typings.electron.Electron.ReadBookmark
-import typings.obsidian.mod.{App, Menu, Modal, Notice, Plugin, PluginManifest, PluginSettingTab, Setting, TextComponent, ViewState, WorkspaceLeaf}
+import typings.obsidian.mod.{App, Command, Menu, Modal, Notice, Plugin, PluginManifest, PluginSettingTab, Setting, TextComponent, ViewState}
 import typings.obsidian.obsidianStrings
 import typings.obsidian.publishMod.global.HTMLElement
 import typings.std.{IArguments, Partial, global}
-import utils.Utils.VIEW_TYPE_EXAMPLE
+import utils.Utils
 
 import scala.concurrent.Future
 import scala.scalajs.js
@@ -20,41 +22,79 @@ import scala.scalajs.js.timers.SetIntervalHandle
 import concurrent.ExecutionContext.Implicits.global
 import scala.language.postfixOps
 
+//
+//bus All the variables have been parameterised and is user changeable. ^story2-00
+//bus
+//bus The variables are all updatable in _ScannerPluginSettingsTab_ ^story1-02
 @js.native
 trait TestObsidianPluginSettings extends  js.Object:
   var appPath : String = js.native
+  var branch : String = js.native
   var docPath : String = js.native
   var appExt  : String = js.native
   var sleepLen: Int    = js.native
-  var docFQNStart: String = js.native
   var groupBySize : Int = js.native
+  var storyFolder : String = js.native
+  var solutionFolder : String = js.native
+  var markerMappings : String = js.native
+  var markersPath : String = js.native
+
 /**
- * The sample plugin
- *
+ * # class ScannerObsidianPlugin
+ * The main class and entry point of the scanner plugin
  */
-@JSExportTopLevel("TestObsidianPlugin")
-class TestObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(app, manifest):
+@JSExportTopLevel("ScannerObsidianPlugin")
+class ScannerObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(app, manifest):
 
   var settings : TestObsidianPluginSettings = _
   var intervalHandle : Option[SetIntervalHandle] = None
 
+  /**
+   * ## onload()
+   * Load the plugin and setup the commands
+   * 1. Add a command to trigger the creation of solution files. Make sure all configs have been done before running the command
+   * 2. Add ribbon command to toggle scannin _ON_ or _OFF_. Make sure the scanner have been configured before starting it.
+   */
   override def onload(): Unit =
+    println("load plugin source-scanner")
     loadSettings()
 
-    addSettingTab(TestObsidianPluginSettingsTab(app, this))
+    addSettingTab(ScannerPluginSettingsTab(app, this))
 
-    var sbItem = addStatusBarItem()
+    val sbItem = addStatusBarItem()
     sbItem.setText("Comment scanner OFF")
+
+    addCommand(
+      Command(
+        id = "solution-files-create",
+        name = "Create solution files")
+        .setCallback( () =>
+          if settings.docPath.equalsIgnoreCase("UNDEFINED") ||
+            settings.storyFolder.equalsIgnoreCase("UNDEFINED") ||
+            settings.solutionFolder.equalsIgnoreCase("UNDEFINED") then
+            Notice("Please configure solution scanner portion before using it.", 0.0)
+          else
+            CrossCuttingConcerns(app, settings.storyFolder, settings.solutionFolder, settings.docPath, settings.markerMappings)
+        )
+    )
+
+    addCommand(
+      Command(
+        id = "marker-files-create",
+        name = "Create a file of markers")
+        .setCallback(() =>
+          MarkerGroupList(app, settings.markersPath, settings.docPath)
+        )
+    )
 
     addRibbonIcon("view",
      "Comment Scanner",
-      (me) =>
+      me =>
         //
         // first make sure that config has been done
         //
         if settings.appPath.equalsIgnoreCase("UNDEFINED") ||
-          settings.docPath.equalsIgnoreCase("UNDEFINED") ||
-          settings.docFQNStart.equalsIgnoreCase("UNKNOWN") then
+          settings.docPath.equalsIgnoreCase("UNDEFINED") then
           Notice("Please configure code scanner before starting it.", 0.0)
         else
           //
@@ -66,34 +106,46 @@ class TestObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(app
               ScanSource(app,
                 settings.appPath,
                 settings.appExt,
-                settings.docFQNStart,
                 settings.docPath,
                 settings.sleepLen,
-                settings.groupBySize))
+                settings.groupBySize,
+                settings.branch))
           else
             sbItem.setText("Comment scanner OFF")
             clearInterval(intervalHandle.get)
             intervalHandle = None
     )
 
+  /**
+   * ## onunload()
+   * If the scanner is running then shut it down and unload the plugin
+   */
   override def onunload() : Unit =
+    println("unload plugin source-scanner")
     if intervalHandle.isDefined then
       clearInterval(intervalHandle.get)
       intervalHandle = None
 
-    app.workspace.detachLeavesOfType(VIEW_TYPE_EXAMPLE)
-
+  /**
+   * ## loadsettings()
+   * Load settings from the file system. If some of the settings are unknown then use defaults.
+   */
   private def loadSettings() : Unit =
     val data = loadData().toFuture
     data.map(any =>
 
       val default = l(
         appPath = "UNDEFINED",
+        branch = "master",
         docPath = "UNDEFINED",
         appExt  = ".java",
         sleepLen = 1000,
         docFQNStart = "UNKNOWN",
-        groupBySize = 10
+        groupBySize = 10,
+        storyFolder = "UNDEFINED",
+        solutionFolder = "UNDEFINED",
+        markerMappings = "UNDEFINED",
+        markersPath = "marker-list"
       )
 
       settings = js.Object.assign(
@@ -106,11 +158,12 @@ class TestObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(app
     saveData(settings).toFuture.foreach(Unit => ())
 
 /**
- * The interface to the settings of the TestObsidian plugin
+ * # class ScannerPluginSettingsTab
+ * The interface to the settings of the scanner plugin. All the values are set up here.
  * @param app of node
  * @param plugin using the settings
  */
-class TestObsidianPluginSettingsTab(app : App, val plugin : TestObsidianPlugin) extends PluginSettingTab(app, plugin):
+class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) extends PluginSettingTab(app, plugin):
 
   override def display() : Unit =
 
@@ -132,6 +185,12 @@ class TestObsidianPluginSettingsTab(app : App, val plugin : TestObsidianPlugin) 
           .setPlaceholder("Enter the application path")
           .setValue(this.plugin.settings.appPath)
           .onChange(value =>
+
+            if Utils.getBranchNameFileLocation(value) then
+              alert(s" git found in ${Utils.branchNameLocation.get}")
+            else
+              alert(s"git not found in app path.")
+
             plugin.settings.appPath = value
             plugin.saveSettings()
           )
@@ -145,22 +204,29 @@ class TestObsidianPluginSettingsTab(app : App, val plugin : TestObsidianPlugin) 
             )
             if !js.isUndefined(pathName) then
               plugin.settings.appPath = pathName.toString
+
+              if Utils.getBranchNameFileLocation(pathName.toString) then
+                alert(s" git found in ${Utils.branchNameLocation.get}")
+              else
+                alert(s"git not found in app path.")
+
+
               plugin.saveSettings()
               appPathSetting.components.first().get.asInstanceOf[TextComponent].setValue(pathName.toString)
           )
         )
 
       Setting(containerElement)
-          .setName("Source search segment")
-          .setDesc("Source path segment where the doc name must be constructed from")
-          .addText(text => text
-            .setPlaceholder("Enter the segment string")
-            .setValue(this.plugin.settings.docFQNStart)
-            .onChange(value =>
-              plugin.settings.docFQNStart = value
-              plugin.saveSettings()
-            )
+        .setName("GIT Branch name")
+        .setDesc("The name of the git branch to scan")
+        .addText(text => text
+          .setPlaceholder("Enter the git branch name")
+          .setValue(this.plugin.settings.branch)
+          .onChange(value =>
+            plugin.settings.branch = value
+            plugin.saveSettings()
           )
+        )
 
       Setting(containerElement)
           .setName("Documentation Path")
@@ -224,11 +290,60 @@ class TestObsidianPluginSettingsTab(app : App, val plugin : TestObsidianPlugin) 
           )
         )
 
+
+      Setting(containerElement)
+        .setName("Story folder")
+        .setDesc("Location where all the user stories are kept")
+        .addText(text => text
+          .setPlaceholder("Enter the story folder location")
+          .setValue(this.plugin.settings.storyFolder)
+          .onChange(value =>
+            plugin.settings.storyFolder = value
+            plugin.saveSettings()
+          )
+        )
+
+      Setting(containerElement)
+        .setName("Solution folder")
+        .setDesc("Location where all the solutions threads are kept")
+        .addText(text => text
+          .setPlaceholder("Enter the solution folder location")
+          .setValue(this.plugin.settings.solutionFolder)
+          .onChange(value =>
+            plugin.settings.solutionFolder = value
+            plugin.saveSettings()
+          )
+        )
+
+      Setting(containerElement)
+        .setName("Mapping of markers to md file names")
+        .setDesc("Mapping definition from marker to md name")
+        .addTextArea(text => text
+          .setPlaceholder("Enter the mappings")
+          .setValue(this.plugin.settings.markerMappings)
+          .onChange(value =>
+            plugin.settings.markerMappings = value
+            plugin.saveSettings()
+          )
+        )
+
+      Setting(containerElement)
+        .setName("Marker list file name")
+        .setDesc("File where the markers list will be created into")
+        .addText(text => text
+          .setPlaceholder("Enter the markers file name")
+          .setValue(this.plugin.settings.markersPath)
+          .onChange(value =>
+            plugin.settings.markersPath = value
+            plugin.saveSettings()
+          )
+        )
+
 /**
  * dummy main object
  */
 object ObsidianExportMain {
   def main(args: Array[String]): Unit = {
-    js.Dynamic.global.module.exports = js.constructorOf[TestObsidianPlugin]
+    js.Dynamic.global.module.exports = js.constructorOf[ScannerObsidianPlugin]
   }
 }
