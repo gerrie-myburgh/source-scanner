@@ -40,7 +40,6 @@ object CrossCuttingConcerns:
         .toMap
     else
       Map[String, String]()
-
     //
     // some containers to use later on
     //

@@ -1,4 +1,4 @@
-import crosscut.CrossCuttingConcerns
+import crosscut.{CrossCuttingConcerns, MarkerGroupList}
 import docscanner.ScanSource
 import org.scalajs.dom
 import org.scalajs.dom.window.alert
@@ -37,6 +37,8 @@ trait TestObsidianPluginSettings extends  js.Object:
   var storyFolder : String = js.native
   var solutionFolder : String = js.native
   var markerMappings : String = js.native
+  var markersPath : String = js.native
+
 /**
  * # class ScannerObsidianPlugin
  * The main class and entry point of the scanner plugin
@@ -73,6 +75,15 @@ class ScannerObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(
             Notice("Please configure solution scanner portion before using it.", 0.0)
           else
             CrossCuttingConcerns(app, settings.storyFolder, settings.solutionFolder, settings.docPath, settings.markerMappings)
+        )
+    )
+
+    addCommand(
+      Command(
+        id = "marker-files-create",
+        name = "Create a file of markers")
+        .setCallback(() =>
+          MarkerGroupList(app, settings.markersPath, settings.docPath)
         )
     )
 
@@ -133,7 +144,8 @@ class ScannerObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(
         groupBySize = 10,
         storyFolder = "UNDEFINED",
         solutionFolder = "UNDEFINED",
-        markerMappings = "UNDEFINED"
+        markerMappings = "UNDEFINED",
+        markersPath = "marker-list"
       )
 
       settings = js.Object.assign(
@@ -291,7 +303,6 @@ class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) ex
           )
         )
 
-
       Setting(containerElement)
         .setName("Solution folder")
         .setDesc("Location where all the solutions threads are kept")
@@ -315,6 +326,19 @@ class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) ex
             plugin.saveSettings()
           )
         )
+
+      Setting(containerElement)
+        .setName("Marker list file name")
+        .setDesc("File where the markers list will be created into")
+        .addText(text => text
+          .setPlaceholder("Enter the markers file name")
+          .setValue(this.plugin.settings.markersPath)
+          .onChange(value =>
+            plugin.settings.markersPath = value
+            plugin.saveSettings()
+          )
+        )
+
 /**
  * dummy main object
  */
