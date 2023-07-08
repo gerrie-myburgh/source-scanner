@@ -3,7 +3,7 @@
 ## Problem that the plugin tries to address
 Developers that uses the agile methodology have a documentation problem. Agile does not mean no documentation , but 
 only the necessary documentation. To enable the developer to minimise the work required to be able to show 
-how business requirements are solved tools are needed.
+how business requirements are met and solved, tools are required.
 
 The simplest solution from a developer point of view is to document the business requirement solution in the code itself.
 The ideal place to do this is in the block and line comments of the source code. What you then need are tools to extract these comments and correlate
@@ -11,7 +11,8 @@ the comments with the user requirements. The user requirement will be in the for
 
 ## Git dependency
 The plugin depends on git to check that the current branch is the one to be scanned. To do this you need to add the following git hook shell
-script for post-checkout
+script for post-checkout. If you want to fool the code scanner into thinking that the code getting scanned is used version control then create a current-branch.txt
+file in the root of the project and place the name of the branch in die file. This name must be the same as defined in your settings.
 
 ```agsl
 #!/bin/bash
@@ -90,13 +91,17 @@ This should make is easier to update markers in the source code as required.
 
 ## User variables that can be set in the plugin settings
 
- *   var appPath : String = js.native - _location of the source code_
- *   var branch : String = js.native - _the git branch that is scanned_
- *   var docPath : String = js.native - _the location of the comment files_
- *   var appExt  : String = js.native - _the source code extension - .java, .scala, c, c++_
- *   var sleepLen: Int    = js.native - _the number of milliseconds between scanning for changes in the source files_
- *   var groupBySize : Int = js.native - _the number of source files to process as a batch after sleep length have passed_
- *   var storyFolder : String = js.native - _vault folder where the user stories are kept_
- *   var solutionFolder : String = js.native - _location where the mapping between the user stories and comment files ar kept_
- *   var markerMappings : String = js.native - _any mapping between the markers and another file name. format is marker=new location_
- *   var markersPath : String = js.native - _location where the list of markers and corresponding documents are generated into_
+ * var applicationPath : String = js.native
+ * var gitBranchToScan : String = js.native
+ * var documentPath : String = js.native
+ * var applicationExtension  : String = js.native
+ * var sleepLength: Int    = js.native
+ * var groupBySize : Int = js.native
+ * var storyFolder : String = js.native
+ * var solutionFolder : String = js.native
+ * var markerMappings : String = js.native
+ * var markersPath : String = js.native
+
+An example of a values that is correct in settings.
+
+![img.png](img.png)
