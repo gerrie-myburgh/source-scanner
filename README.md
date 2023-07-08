@@ -81,3 +81,14 @@ with the document file name they are in.
 This should make is easier to update markers in the source code as required.
 
 ## User variables that can be set in the plugin settings
+
+ *   var appPath : String = js.native - _location of the source code_
+ *   var branch : String = js.native - _the git branch that is scanned_
+ *   var docPath : String = js.native - _the location of the comment files_
+ *   var appExt  : String = js.native - _the source code extension - .java, .scala, c, c++_
+ *   var sleepLen: Int    = js.native - _the number of milliseconds between scanning for changes in the source files_
+ *   var groupBySize : Int = js.native - _the number of source files to process as a batch after sleep length have passed_
+ *   var storyFolder : String = js.native - _vault folder where the user stories are kept_
+ *   var solutionFolder : String = js.native - _location where the mapping between the user stories and comment files ar kept_
+ *   var markerMappings : String = js.native - _any mapping between the markers and another file name. format is marker=new location_
+ *   var markersPath : String = js.native - _location where the list of markers and corresponding documents are generated into_
