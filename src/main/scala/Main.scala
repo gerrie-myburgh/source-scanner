@@ -345,11 +345,19 @@ class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) ex
           )
         )
 
+      Setting(containerElement)
+        .setName("Check variables")
+        .setDesc("Check that all variables are defined correctly")
+        .addButton(button => button
+          .setButtonText("Check values in settings")
+          .onClick(cb => checkValues())
+          )
+
   /**
-   * ## hide()
+   * ## checkValues
    * Make sure that the settings values are all valid on hide
    */
-  override def hide() : Unit =
+  private def checkValues() : Unit =
 
     if plugin.settings.applicationPath.isEmpty
       || plugin.settings.applicationPath.equalsIgnoreCase(UNDEFINED) then
