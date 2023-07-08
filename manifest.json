@@ -5,6 +5,6 @@
 "minAppVersion": "0.13.11",
 "description": "Source Scanner Plugin.",
 "author": "gerrie myburgh",
-"isDesktopOnly": false
+"isDesktopOnly": true
 }
 
