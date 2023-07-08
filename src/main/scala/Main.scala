@@ -9,7 +9,6 @@ import typings.obsidian.obsidianStrings
 import typings.obsidian.publishMod.global.HTMLElement
 import typings.std.{IArguments, Partial, global}
 import utils.Utils
-import utils.Utils.VIEW_TYPE_EXAMPLE
 
 import scala.concurrent.Future
 import scala.scalajs.js
@@ -23,6 +22,10 @@ import scala.scalajs.js.timers.SetIntervalHandle
 import concurrent.ExecutionContext.Implicits.global
 import scala.language.postfixOps
 
+//
+//bus All the variables have been parameterised and is user changeable. ^story2-00
+//bus
+//bus The variables are all updatable in _ScannerPluginSettingsTab_ ^story1-02
 @js.native
 trait TestObsidianPluginSettings extends  js.Object:
   var appPath : String = js.native
@@ -35,20 +38,26 @@ trait TestObsidianPluginSettings extends  js.Object:
   var solutionFolder : String = js.native
   var markerMappings : String = js.native
 /**
- * The sample plugin
- *
+ * # class ScannerObsidianPlugin
+ * The main class and entry point of the scanner plugin
  */
-@JSExportTopLevel("TestObsidianPlugin")
-class TestObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(app, manifest):
+@JSExportTopLevel("ScannerObsidianPlugin")
+class ScannerObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(app, manifest):
 
   var settings : TestObsidianPluginSettings = _
   var intervalHandle : Option[SetIntervalHandle] = None
 
+  /**
+   * ## onload()
+   * Load the plugin and setup the commands
+   * 1. Add a command to trigger the creation of solution files. Make sure all configs have been done before running the command
+   * 2. Add ribbon command to toggle scannin _ON_ or _OFF_. Make sure the scanner have been configured before starting it.
+   */
   override def onload(): Unit =
     println("load plugin source-scanner")
     loadSettings()
 
-    addSettingTab(TestObsidianPluginSettingsTab(app, this))
+    addSettingTab(ScannerPluginSettingsTab(app, this))
 
     val sbItem = addStatusBarItem()
     sbItem.setText("Comment scanner OFF")
@@ -96,14 +105,20 @@ class TestObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(app
             intervalHandle = None
     )
 
+  /**
+   * ## onunload()
+   * If the scanner is running then shut it down and unload the plugin
+   */
   override def onunload() : Unit =
     println("unload plugin source-scanner")
     if intervalHandle.isDefined then
       clearInterval(intervalHandle.get)
       intervalHandle = None
 
-    app.workspace.detachLeavesOfType(VIEW_TYPE_EXAMPLE)
-
+  /**
+   * ## loadsettings()
+   * Load settings from the file system. If some of the settings are unknown then use defaults.
+   */
   private def loadSettings() : Unit =
     val data = loadData().toFuture
     data.map(any =>
@@ -131,11 +146,12 @@ class TestObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(app
     saveData(settings).toFuture.foreach(Unit => ())
 
 /**
- * The interface to the settings of the TestObsidian plugin
+ * # class ScannerPluginSettingsTab
+ * The interface to the settings of the scanner plugin. All the values are set up here.
  * @param app of node
  * @param plugin using the settings
  */
-class TestObsidianPluginSettingsTab(app : App, val plugin : TestObsidianPlugin) extends PluginSettingTab(app, plugin):
+class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) extends PluginSettingTab(app, plugin):
 
   override def display() : Unit =
 
@@ -304,6 +320,6 @@ class TestObsidianPluginSettingsTab(app : App, val plugin : TestObsidianPlugin) 
  */
 object ObsidianExportMain {
   def main(args: Array[String]): Unit = {
-    js.Dynamic.global.module.exports = js.constructorOf[TestObsidianPlugin]
+    js.Dynamic.global.module.exports = js.constructorOf[ScannerObsidianPlugin]
   }
 }

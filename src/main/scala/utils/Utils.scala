@@ -7,8 +7,11 @@ import scalajs.js.Dynamic.global as g
 import typings.node.fsMod
 import typings.node.fsMod.PathLike
 
+/**
+ * # object Utils
+ * General utilities reused across other objects
+ */
 object Utils:
-  val VIEW_TYPE_EXAMPLE = "example-view"
   private val path = g.require("path")
   val separator : String = path.sep.asInstanceOf[String]
 
@@ -18,14 +21,15 @@ object Utils:
   var branchNameLocation : Option[String] = None
 
   /**
-   * traverse from the tail of the app path to the root looking for the .git folder. location
+   * ## getBranchNameFileLocation
+   * Traverse from the tail of the app path to the root looking for the .git folder. location
    * @param appPath
    * @Return - true of found false if not found
    */
   def getBranchNameFileLocation(appPath : String) : Boolean =
     var path = appPath.split(separator)
     while
-      val folderName = walkFoldersBackwards(path.mkString(separator))
+      val folderName = getAllFolderNames(path.mkString(separator))
       path.length > 1 && !folderName.exists(_.endsWith(".git"))
     do
       path = path.dropRight(1)
@@ -38,7 +42,8 @@ object Utils:
       false
 
   /**
-   * get all files below dir recursively
+   * ## walk
+   * Get all files below dir recursively
    *
    * @param dir the start folder
    * @return list of files contained in dir
@@ -62,12 +67,13 @@ object Utils:
     files.toList
 
   /**
-   * get all folder names in the current location
+   * ## getAllFolderNames
+   * Get all folder names in the current location
    *
    * @param dir the start folder
    * @return list of files contained in dir
    */
-  def walkFoldersBackwards(dir: String): List[String] =
+  def getAllFolderNames(dir: String): List[String] =
 
     val files = mutable.ListBuffer[String]()
 
