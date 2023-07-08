@@ -9,6 +9,14 @@ The simplest solution from a developer point of view is to document the business
 The ideal place to do this is in the block and line comments of the source code. What you then need are tools to extract these comments and correlate
 the comments with the user requirements. The user requirement will be in the form of user stories. 
 
+## Git dependency
+The plugin depends on git to check that the current branch is the one to be scanned. To do this you need to add the following git hook shell
+script for post-checkout
+
+```agsl
+#!/bin/bash
+git branch --show-current > current-branch.txt
+```
 
 ## The use case for this plugin is the following :
 
