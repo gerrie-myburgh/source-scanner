@@ -27,33 +27,27 @@ object ScanSource:
 
   private val path = g.require("path")
 
-  private val separator : String = path.sep.asInstanceOf[String]
-
-  private var gitBranchName : String = _ // the working branch defined in the settings
-  private var running : Boolean = true
-  private var appPath : String = _    // application path
-  private var ext : String = _        // the source file name extension
-  private var docPath : String = _    // document path abs path
-  private var relDocPath : String = _ // document path abs rel from vault root
-  private var groupBySize : Int = _   // number of documents to process at a time
+  private var gitBranchName : String = _        // the working gitBranchToScan defined in the settings
+  private var applicationPath : String = _      // application path
+  private var codeExtension : String = _        // the source file name extension
+  private var documentPath : String = _         // document path abs path
+  private var relativeDocumentPath : String = _ // document path abs rel from vault root
+  private var groupBySize : Int = _             // number of documents to process at a time
   //
   //
-  private var sleepLength : Int = _   // number of seconds to sleep
+  private var sleepLength : Int = _             // number of seconds to sleep
   //
   // number of computation phases per iteration
   //
-  private var phaseCount = 0          // the number of the current phase
-  private val maxPhases  = 5          // max number of phases
+  private var phaseCount = 0                    // the number of the current phase
   //
   // current files with 'ext' extension with paths
   //
-  private var appFileListWithExt : List[List[String]] = _
-  private var docFileListWithExt : List[String] = _
+  private var applicationFileListWithExtension : List[List[String]] = _
+  private var documentFileListWithExtension : List[String] = _
 
-  private val srcAndDocLink = mutable.Set[ DOC ]() // docs that have a source
-  private val docAndContentString = mutable.HashMap[String, String]() // all documents created with the content
-
-
+  private val sourceAndDocumentLink = mutable.Set[ DOC ]() // docs that have a source
+  private val documentAndContentMap = mutable.HashMap[String, String]() // all documents created with the content
 
   /**
    * ## apply
@@ -81,33 +75,33 @@ object ScanSource:
     //
     path.basename("")
 
-    appPath = _appPath
+    applicationPath = _appPath
     gitBranchName = _gitBranchName
-    ext = _ext
-    docPath = _docPath
-    relDocPath = _docPath
+    codeExtension = _ext
+    documentPath = _docPath
+    relativeDocumentPath = _docPath
     sleepLength = _sleepLength
     groupBySize = _groupBySize
     //
     // make sure the doc path relative from vault exist - if not create this path
     //
     val vaultPath = app.vault.adapter.asInstanceOf[FileSystemAdapter].getBasePath()
-    docPath = s"$vaultPath$separator$docPath"
-    fsMod.mkdirSync(docPath, l(recursive =  true).asInstanceOf[fsMod.MakeDirectoryOptions])
+    documentPath = s"$vaultPath${Utils.separator}$documentPath"
+    fsMod.mkdirSync(documentPath, l(recursive =  true).asInstanceOf[fsMod.MakeDirectoryOptions])
 
     timers.setInterval(sleepLength)(this.run())
 
   /**
    * ## private def isBranchStillActive() : Boolean =
-   * check if the current branch is still the active branch for the scanner
+   * check if the current gitBranchToScan is still the active gitBranchToScan for the scanner
    *
    * @return
    */
   private def isBranchStillActive: Boolean =
     if Utils.branchNameLocation.isEmpty then
-      Utils.getBranchNameFileLocation(appPath)
+      Utils.getBranchNameFileLocation(applicationPath)
     if Utils.branchNameLocation.isDefined then
-      val branchName = fsMod.readFileSync(Utils.branchNameLocation.get + Utils.separator + "current-branch.txt", l(encoding = "utf8", flag = "r")
+      val branchName = fsMod.readFileSync(Utils.branchNameLocation.get + Utils.separator + "current-gitBranchToScan.txt", l(encoding = "utf8", flag = "r")
         .asInstanceOf[ObjectEncodingOptionsflagEncoding])
         .asInstanceOf[String]
       if branchName.isEmpty || !branchName.trim.equalsIgnoreCase(gitBranchName.trim) then false
@@ -117,7 +111,7 @@ object ScanSource:
 
   private def run() : Unit =
     //
-    // if the current branch is the defined branch then go ahead an process else do not process
+    // if the current gitBranchToScan is the defined gitBranchToScan then go ahead an process else do not process
     //
     if phaseCount == 0 then
       if !isBranchStillActive then return()
@@ -126,16 +120,16 @@ object ScanSource:
     // do work in phases - get all the source files.
     //
     if phaseCount == 1 then
-      appFileListWithExt = Utils.walk(appPath
+      applicationFileListWithExtension = Utils.walk(applicationPath
         .asInstanceOf[String])
-        .filter(file => file.endsWith(ext))
+        .filter(file => file.endsWith(codeExtension))
         .grouped(10)
         .toList
     //
     // get list of document files
     //
     if phaseCount == 2 then
-      docFileListWithExt = Utils.walk(docPath
+      documentFileListWithExtension = Utils.walk(documentPath
         .asInstanceOf[String])
         .filter(file => file.endsWith(".md"))
     //
@@ -144,11 +138,11 @@ object ScanSource:
     //    write comments out to document file
     //
     if phaseCount == 3 then
-      if appFileListWithExt.nonEmpty then
-        appFileListWithExt.head.foreach(srcFile =>
+      if applicationFileListWithExtension.nonEmpty then
+        applicationFileListWithExtension.head.foreach(srcFile =>
           val docName = createDocNameFromSourceName(srcFile)
-          val documentNameAndPath = s"$docPath$separator$docName"
-          srcAndDocLink += documentNameAndPath
+          val documentNameAndPath = s"$documentPath${Utils.separator}$docName"
+          sourceAndDocumentLink += documentNameAndPath
           //
           // if the document file does not exist then create an empty one
           //
@@ -176,7 +170,7 @@ object ScanSource:
                 .asInstanceOf[String]
 
               val commentString = Lexer(srcLines)
-              docAndContentString += ( s"$relDocPath${Utils.separator}$docName".dropRight(3) -> commentString )
+              documentAndContentMap += ( s"$relativeDocumentPath${Utils.separator}$docName".dropRight(3) -> commentString )
 
               fsMod.writeFileSync(documentNameAndPath, s"[Source](file:$srcFile)\n\n")
               fsMod.appendFileSync(documentNameAndPath, commentString)
@@ -184,20 +178,20 @@ object ScanSource:
             case ex : js.JavaScriptException => println("source removed")
           }
         )
-        appFileListWithExt = appFileListWithExt.drop(1)
+        applicationFileListWithExtension = applicationFileListWithExtension.drop(1)
         phaseCount = 2
 
     if phaseCount == 4 && isBranchStillActive then
       //
       // every document that does not have a source file must be removed
       //
-      docFileListWithExt.foreach((fileName: String) =>
-        if !srcAndDocLink.contains(fileName) then
+      documentFileListWithExtension.foreach((fileName: String) =>
+        if !sourceAndDocumentLink.contains(fileName) then
           fsMod.unlinkSync(fileName)
       )
-      srcAndDocLink.clear()
+      sourceAndDocumentLink.clear()
       phaseCount = -1
-      docAndContentString.clear()
+      documentAndContentMap.clear()
 
     phaseCount += 1
 
@@ -207,6 +201,6 @@ object ScanSource:
    * @return the document name
    */
   private def createDocNameFromSourceName(sourceFile : String) =
-    val docPath = s"${sourceFile.drop(appPath.length + 1).dropRight(ext.length)}.md"
+    val docPath = s"${sourceFile.drop(applicationPath.length + 1).dropRight(codeExtension.length)}.md"
     val docName = docPath.replace('/', '.')
     docName

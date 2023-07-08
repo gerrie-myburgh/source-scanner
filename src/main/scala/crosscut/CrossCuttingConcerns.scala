@@ -12,6 +12,12 @@ import scala.language.postfixOps
 import scala.scalajs.js
 import scala.scalajs.js.Dynamic.literal as l
 
+/**
+ * # object CrossCuttingConcerns
+ * Setup all the cross cutting concerns for the solution threads. These solution threads are marked by using markers
+ * that is picked up from the document md files and placed in the solution folder.
+ *
+ */
 object CrossCuttingConcerns:
 
   private type DOCNAME   = String
@@ -20,7 +26,6 @@ object CrossCuttingConcerns:
   private type SOLNAME   = String
   private type PATHNAME  = String
 
-  private val markerRegExp = """( |\t|^)\^([a-zA-Z0-9]+\-)*[a-zA-Z0-9]+\-[0-9]+""".r
   def apply(app : mod.App, storyFolder : String,  solutionFolder : String, docFolder: String, markerMapping : String) : Unit =
     //
     //bus if a mapping string has been defined then get the mappings : format is 'marker'='mapping-value'
@@ -43,43 +48,43 @@ object CrossCuttingConcerns:
     //
     // some containers to use later on
     //
-    val markerToDocMap     = mutable.HashMap[MARKER, DOCNAME]()
-    val docToMarkerMap     = mutable.HashMap[DOCNAME, List[MARKER]]()
-    val solToMarkerMap     = mutable.HashMap[SOLNAME, List[MARKER]]()
-    val allSolutionFiles   = mutable.HashSet[MARKER]()
+    val markerToDocumentMap     = mutable.HashMap[MARKER, DOCNAME]()
+    val documentToMarkerMap     = mutable.HashMap[DOCNAME, List[MARKER]]()
+    val solutionToMarkerMap     = mutable.HashMap[SOLNAME, List[MARKER]]()
+    val allSolutionFiles        = mutable.HashSet[MARKER]()
     //
     // get all the doc files to scan
     //
-    val docPath = s"$vaultPath${Utils.separator}$docFolder"
-    val docFiles = Utils.walk(docPath).filter(name => name.endsWith(".md")).toList
+    val documentPath = s"$vaultPath${Utils.separator}$docFolder"
+    val documentFiles = Utils.walk(documentPath).filter(name => name.endsWith(".md")).toList
     //
     //bus remove all the solution files
     //
-    val solPath = s"$vaultPath${Utils.separator}$solutionFolder"
-    val solFiles = Utils.walk(solPath).filter(name => name.endsWith(".md")).toList
-    solFiles.foreach(file => fsMod.unlinkSync(file))
+    val solutionPath = s"$vaultPath${Utils.separator}$solutionFolder"
+    val solutionFiles = Utils.walk(solutionPath).filter(name => name.endsWith(".md")).toList
+    solutionFiles.foreach(file => fsMod.unlinkSync(file))
     //
     // pick up all markers in the doc string doc file by doc file and aggregate the markers
     // before processing them
     //
     val markerlist = mutable.ListBuffer[String]()
-    docFiles.foreach(docFile =>
+    documentFiles.foreach(docFile =>
       val str = fsMod.readFileSync(docFile, l(encoding = "utf8", flag = "r")
         .asInstanceOf[ObjectEncodingOptionsflagEncoding])
         .asInstanceOf[String]
 
-      val markersMatch = markerRegExp.findAllMatchIn(str)
-      val markersPerDoc = markersMatch.map(marker => str.substring(marker.start, marker.end).trim).toList
+      val markersMatch = Utils.markerRegExp.findAllMatchIn(str)
+      val markersPerDocument = markersMatch.map(marker => str.substring(marker.start, marker.end).trim).toList
 
-      markerlist ++= markersPerDoc
+      markerlist ++= markersPerDocument
 
-      val docName = docFile.split(Utils.separator).last
+      val documentName = docFile.split(Utils.separator).last
 
-      markersPerDoc.foreach(marker =>
-        markerToDocMap += (marker -> docName)
+      markersPerDocument.foreach(marker =>
+        markerToDocumentMap += (marker -> documentName)
       )
 
-      docToMarkerMap += (docName -> markersPerDoc)
+      documentToMarkerMap += (documentName -> markersPerDocument)
 
     )
 
@@ -100,7 +105,7 @@ object CrossCuttingConcerns:
     // sort them then
     // group by path/name.md excluding the seq number
     //
-    val allMarkers = docToMarkerMap
+    val allMarkers = documentToMarkerMap
       .values
       .toList
       .flatten
@@ -120,7 +125,7 @@ object CrossCuttingConcerns:
         //
         // build links to document thread
         //
-        mdString ++= s"""![[${markerToDocMap(marker)}#${marker}]]\n"""
+        mdString ++= s"""![[${markerToDocumentMap(marker)}#${marker}]]\n"""
       )
       //
       // remove solution file it exists and recreate with new values.
@@ -152,12 +157,12 @@ object CrossCuttingConcerns:
    * @return the story name
    */
   private def getStoryFileName(solName : SOLNAME, mapping : Map[String, String]) : String =
-    val nameList = solName.split("/").drop(1)
+    val nameList = solName.split(Utils.separator).drop(1)
     val storyName = nameList.last
     if mapping.contains(storyName) then
-      s"${nameList.dropRight(1).mkString("/")}${mapping(storyName)}"
+      s"${nameList.dropRight(1).mkString(Utils.separator)}${mapping(storyName)}"
     else
-      nameList.mkString("/")
+      nameList.mkString(Utils.separator)
 
   /**
    * Take a marker string and convert into file path / file name.md. If the marker excluding the -[0-9]+

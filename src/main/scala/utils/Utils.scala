@@ -18,7 +18,7 @@ object Utils:
 
 
   //
-  // The name of the file location of the current-branch.txt file
+  // The name of the file location of the current-gitBranchToScan.txt file
   //
   var branchNameLocation : Option[String] = None
 

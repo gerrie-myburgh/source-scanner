@@ -34,3 +34,6 @@ metals.sbt
 # node_modules
 node_modules
 output
+
+#source scanner
+current-branch.txt

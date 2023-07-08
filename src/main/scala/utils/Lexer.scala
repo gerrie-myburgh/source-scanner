@@ -14,6 +14,9 @@ object Lexer:
   private val parsed = StringBuilder()
   private var inBlockComment = 0
 
+  /*
+  * get a character from the parse string
+  */
   private def getChar: (Boolean, Char, Int) =
     if idx == parseString.length then
       (false, ' ', idx)
@@ -22,12 +25,18 @@ object Lexer:
       idx += 1
       ret
 
+  /*
+  * is the next number of characters same as the str
+  */
   private def isString(str: String) =
     if str.length > parseString.length - idx then
       false
     else
       str.equals(parseString.substring(idx, str.length + idx))
 
+  /*
+  * get the string literal
+  */
   private def getString() =
     while
       val ch = getChar
@@ -35,6 +44,9 @@ object Lexer:
     do
       ()
 
+  /*
+  * get a line business comment
+  */
   private def lineComment() =
     idx += 4
     while
@@ -49,6 +61,9 @@ object Lexer:
     do
       ()
 
+  /*
+  * capture all the characters up to str
+  */
   private def captureCharsUpTo(str: String): Unit =
     val firstChar = str.charAt(0)
     val restStr = str.substring(1)
@@ -68,6 +83,9 @@ object Lexer:
     do
       ()
 
+  /*
+  * scan the parse string for block and line comments
+  */
   private def scan =
     val ch = getChar
     if ch._1 then
@@ -87,6 +105,9 @@ object Lexer:
     else
       false
 
+  /*
+  * parse the input str for comments
+  */
   def apply(str: String) =
 
     parseString = str
@@ -98,7 +119,4 @@ object Lexer:
       scan
     do
       ()
-    //
-    // remove leading space/tabs followd by \*
-    //
     parsed.toString().replaceAll("""(\r?\n)[\t ]+\*""", "\n")

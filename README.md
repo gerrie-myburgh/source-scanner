@@ -20,7 +20,7 @@ git branch --show-current > current-branch.txt
 
 ## The use case for this plugin is the following :
 
-0. This plugin is restricted to source languages like java, scala, c, c++ that have block and line comments. 
+0. This plugin is restricted to source languages like java, scala, c, c++, typescript, javascript that have block and line comments. 
 1. Scan source code files for comments that is written out to document files in current vault. These comment can include markdown text.
 2. Correlate the comments with agile user stories.
 3. Create a table of markers along with the documents where the markers appear in. 

@@ -19,45 +19,45 @@ object MarkerGroupList:
   private type DOCNAME = String
   private type MARKER = String
 
-  def apply(app: mod.App, markerFile : String, docFolder: String): Unit =
+  def apply(app: mod.App, markerFile : String, documentFolder: String): Unit =
     val vaultPath = app.vault.adapter.asInstanceOf[FileSystemAdapter].getBasePath()
     val markerFileNameWithPath = s"$vaultPath${Utils.separator}$markerFile.md"
     //
     // some containers to use later on
     //
-    val markerToDocMap = mutable.HashMap[MARKER, DOCNAME]()
+    val markerToDocumentMap = mutable.HashMap[MARKER, DOCNAME]()
     val allSolutionFiles = mutable.ArrayBuffer[MARKER]()
     //
     // get all the doc files to scan
     //
-    val docPath = s"$vaultPath${Utils.separator}$docFolder"
-    val docFiles = Utils.walk(docPath).filter(name => name.endsWith(".md")).toList
+    val documentPath = s"$vaultPath${Utils.separator}$documentFolder"
+    val documentFiles = Utils.walk(documentPath).filter(name => name.endsWith(".md")).toList
     //
     // pick up all markers in the doc string doc file by doc file and aggregate the markers
     // before processing them
     //
     val markerlist = mutable.ListBuffer[String]()
-    docFiles.foreach(docFile =>
-      val str = fsMod.readFileSync(docFile, l(encoding = "utf8", flag = "r")
+    documentFiles.foreach(docFile =>
+      val fileContent = fsMod.readFileSync(docFile, l(encoding = "utf8", flag = "r")
         .asInstanceOf[ObjectEncodingOptionsflagEncoding])
         .asInstanceOf[String]
 
-      val markersMatch = Utils.markerRegExp.findAllMatchIn(str)
-      val markersPerDoc = markersMatch.map(marker => str.substring(marker.start, marker.end).trim).toList
+      val markersMatch = Utils.markerRegExp.findAllMatchIn(fileContent)
+      val markersPerDocument = markersMatch.map(marker => fileContent.substring(marker.start, marker.end).trim).toList
 
-      markerlist ++= markersPerDoc
+      markerlist ++= markersPerDocument
 
       val docName = docFile.split(Utils.separator).last
 
-      markersPerDoc.foreach(marker =>
-        markerToDocMap += (marker -> docName)
+      markersPerDocument.foreach(marker =>
+        markerToDocumentMap += (marker -> docName)
       )
     )
     //
     // collect all markers in one list
     // sort them by marker name
     //
-    val allMarkers = markerToDocMap
+    val allMarkers = markerToDocumentMap
       .keys
       .toList
       .sortWith((s1, s2) =>
@@ -72,7 +72,7 @@ object MarkerGroupList:
     val mdString = StringBuilder(s"|marker|document|\n")
     mdString ++=                 s"|------|--------|\n"
     allMarkers.foreach(marker =>
-      val docName = markerToDocMap(marker)
+      val docName = markerToDocumentMap(marker)
       //
       // build marker to doc entry
       //

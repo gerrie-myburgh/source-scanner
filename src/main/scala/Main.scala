@@ -28,11 +28,11 @@ import scala.language.postfixOps
 //bus The variables are all updatable in _ScannerPluginSettingsTab_ ^story1-02
 @js.native
 trait TestObsidianPluginSettings extends  js.Object:
-  var appPath : String = js.native
-  var branch : String = js.native
-  var docPath : String = js.native
-  var appExt  : String = js.native
-  var sleepLen: Int    = js.native
+  var applicationPath : String = js.native
+  var gitBranchToScan : String = js.native
+  var documentPath : String = js.native
+  var applicationExtension  : String = js.native
+  var sleepLength: Int    = js.native
   var groupBySize : Int = js.native
   var storyFolder : String = js.native
   var solutionFolder : String = js.native
@@ -69,12 +69,12 @@ class ScannerObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(
         id = "solution-files-create",
         name = "Create solution files")
         .setCallback( () =>
-          if settings.docPath.equalsIgnoreCase("UNDEFINED") ||
+          if settings.documentPath.equalsIgnoreCase("UNDEFINED") ||
             settings.storyFolder.equalsIgnoreCase("UNDEFINED") ||
             settings.solutionFolder.equalsIgnoreCase("UNDEFINED") then
             Notice("Please configure solution scanner portion before using it.", 0.0)
           else
-            CrossCuttingConcerns(app, settings.storyFolder, settings.solutionFolder, settings.docPath, settings.markerMappings)
+            CrossCuttingConcerns(app, settings.storyFolder, settings.solutionFolder, settings.documentPath, settings.markerMappings)
         )
     )
 
@@ -83,7 +83,7 @@ class ScannerObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(
         id = "marker-files-create",
         name = "Create a file of markers")
         .setCallback(() =>
-          MarkerGroupList(app, settings.markersPath, settings.docPath)
+          MarkerGroupList(app, settings.markersPath, settings.documentPath)
         )
     )
 
@@ -93,8 +93,8 @@ class ScannerObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(
         //
         // first make sure that config has been done
         //
-        if settings.appPath.equalsIgnoreCase("UNDEFINED") ||
-          settings.docPath.equalsIgnoreCase("UNDEFINED") then
+        if settings.applicationPath.equalsIgnoreCase("UNDEFINED") ||
+          settings.documentPath.equalsIgnoreCase("UNDEFINED") then
           Notice("Please configure code scanner before starting it.", 0.0)
         else
           //
@@ -104,12 +104,12 @@ class ScannerObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(
             sbItem.setText("Comment scanner ON")
             intervalHandle = Some(
               ScanSource(app,
-                settings.appPath,
-                settings.appExt,
-                settings.docPath,
-                settings.sleepLen,
+                settings.applicationPath,
+                settings.applicationExtension,
+                settings.documentPath,
+                settings.sleepLength,
                 settings.groupBySize,
-                settings.branch))
+                settings.gitBranchToScan))
           else
             sbItem.setText("Comment scanner OFF")
             clearInterval(intervalHandle.get)
@@ -183,7 +183,7 @@ class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) ex
         .setDesc("Path to application workspace")
         .addText(text => text
           .setPlaceholder("Enter the application path")
-          .setValue(this.plugin.settings.appPath)
+          .setValue(this.plugin.settings.applicationPath)
           .onChange(value =>
 
             if Utils.getBranchNameFileLocation(value) then
@@ -191,7 +191,7 @@ class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) ex
             else
               alert(s"git not found in app path.")
 
-            plugin.settings.appPath = value
+            plugin.settings.applicationPath = value
             plugin.saveSettings()
           )
         )
@@ -203,7 +203,7 @@ class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) ex
               l(title = "Source path", properties = js.Array("openDirectory"))
             )
             if !js.isUndefined(pathName) then
-              plugin.settings.appPath = pathName.toString
+              plugin.settings.applicationPath = pathName.toString
 
               if Utils.getBranchNameFileLocation(pathName.toString) then
                 alert(s" git found in ${Utils.branchNameLocation.get}")
@@ -218,12 +218,12 @@ class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) ex
 
       Setting(containerElement)
         .setName("GIT Branch name")
-        .setDesc("The name of the git branch to scan")
+        .setDesc("The name of the git gitBranchToScan to scan")
         .addText(text => text
-          .setPlaceholder("Enter the git branch name")
-          .setValue(this.plugin.settings.branch)
+          .setPlaceholder("Enter the git gitBranchToScan name")
+          .setValue(this.plugin.settings.gitBranchToScan)
           .onChange(value =>
-            plugin.settings.branch = value
+            plugin.settings.gitBranchToScan = value
             plugin.saveSettings()
           )
         )
@@ -233,9 +233,9 @@ class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) ex
           .setDesc("Path to document workspace relative from vault")
           .addText(text => text
             .setPlaceholder("Enter the documentation path")
-            .setValue(this.plugin.settings.docPath)
+            .setValue(this.plugin.settings.documentPath)
             .onChange(value =>
-              plugin.settings.docPath = value
+              plugin.settings.documentPath = value
               plugin.saveSettings()
             )
           )
@@ -245,9 +245,9 @@ class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) ex
         .setDesc("Type of application (.java .js etc)")
         .addText(text => text
           .setPlaceholder("Enter the application extension")
-          .setValue(this.plugin.settings.appExt)
+          .setValue(this.plugin.settings.applicationExtension)
           .onChange(value =>
-            plugin.settings.appExt = value
+            plugin.settings.applicationExtension = value
             plugin.saveSettings()
           )
         )
@@ -257,7 +257,7 @@ class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) ex
         .setDesc("Activation interval in ms")
         .addText(text => text
           .setPlaceholder("Enter the activation interval")
-          .setValue(this.plugin.settings.sleepLen.toString)
+          .setValue(this.plugin.settings.sleepLength.toString)
           .onChange(value =>
 
             val intValue = try {
@@ -266,7 +266,7 @@ class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) ex
               case i : js.JavaScriptException => 1000
             }
 
-            plugin.settings.sleepLen = intValue
+            plugin.settings.sleepLength = intValue
             plugin.saveSettings()
           )
         )
@@ -339,7 +339,7 @@ class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) ex
           )
         )
 
-/**
+/*
  * dummy main object
  */
 object ObsidianExportMain {
