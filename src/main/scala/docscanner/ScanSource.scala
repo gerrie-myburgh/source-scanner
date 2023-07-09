@@ -94,18 +94,22 @@ object ScanSource:
   /**
    * ## private def isBranchStillActive() : Boolean =
    * check if the current gitBranchToScan is still the active gitBranchToScan for the scanner
-   *
+   * if the file does not exist then assume the user wants to use the default code in the application path
    * @return
    */
   private def isBranchStillActive: Boolean =
     if Utils.branchNameLocation.isEmpty then
       Utils.getBranchNameFileLocation(applicationPath)
     if Utils.branchNameLocation.isDefined then
-      val branchName = fsMod.readFileSync(Utils.branchNameLocation.get + Utils.separator + "current-gitBranchToScan.txt", l(encoding = "utf8", flag = "r")
-        .asInstanceOf[ObjectEncodingOptionsflagEncoding])
-        .asInstanceOf[String]
-      if branchName.isEmpty || !branchName.trim.equalsIgnoreCase(gitBranchName.trim) then false
-      else true
+      try {
+        val branchName = fsMod.readFileSync(Utils.branchNameLocation.get + Utils.separator + "current-branch.txt", l(encoding = "utf8", flag = "r")
+          .asInstanceOf[ObjectEncodingOptionsflagEncoding])
+          .asInstanceOf[String]
+        if branchName.isEmpty || !branchName.trim.equalsIgnoreCase(gitBranchName.trim) then false
+        else true
+      } catch {
+        case ex  : js.JavaScriptException => true
+      }
     else
       false
 

@@ -22,7 +22,7 @@ object Utils:
   val fileAndPathExp = s"""([a-zA-Z0-9 -]+${separator})*[a-zA-Z0-9 -]+""".r
 
   //
-  // The name of the file location of the current-gitBranchToScan.txt file
+  // The name of the file location of the current-branch.txt file
   //
   var branchNameLocation : Option[String] = None
 
