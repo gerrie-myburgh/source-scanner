@@ -415,7 +415,10 @@ class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) ex
       alert("Group size must be greater than 0")
       return ()
 
-    if plugin.settings.markerMappings != null && plugin.settings.markerMappings.nonEmpty &&
+    if plugin.settings.markerMappings == null then
+      plugin.settings.markerMappings = ""
+
+    if plugin.settings.markerMappings.nonEmpty &&
       plugin.settings.markerMappings.split("\r?\n").filter(!_.contains('=')).length > 0 then
       alert("Marker mappings list has a mapping in it without a '=' sign.")
       return ()
