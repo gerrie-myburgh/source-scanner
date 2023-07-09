@@ -192,9 +192,7 @@ class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) ex
           .setValue(this.plugin.settings.applicationPath)
           .onChange(value =>
 
-            if Utils.getBranchNameFileLocation(value) then
-              alert(s" git found in ${Utils.branchNameLocation.get}")
-            else
+            if !Utils.getBranchNameFileLocation(value) then
               alert(s"git not found in app path.")
 
             plugin.settings.applicationPath = value
@@ -211,10 +209,8 @@ class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) ex
             if !js.isUndefined(pathName) then
               plugin.settings.applicationPath = pathName.toString
 
-              if Utils.getBranchNameFileLocation(pathName.toString) then
-                alert(s" git found in ${Utils.branchNameLocation.get}")
-              else
-                alert(s"git not found in app path.")
+              if !Utils.getBranchNameFileLocation(pathName.toString) then
+                alert(s"git not found in application path.")
 
 
               plugin.saveSettings()
@@ -266,10 +262,16 @@ class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) ex
           .setValue(this.plugin.settings.sleepLength.toString)
           .onChange(value =>
 
-            val intValue = try {
-              (if value.isEmpty then "0" else value).toInt
-            } catch {
-              case i : js.JavaScriptException => 1000
+            var intValue = 1000
+            try {
+              intValue = try {
+                (if value.isEmpty then "0" else value).toInt
+              } catch {
+                case i: js.JavaScriptException => 1000
+              }
+            } catch { case ex : NumberFormatException =>
+              alert("Number is not valid")
+              intValue = 1000
             }
 
             plugin.settings.sleepLength = intValue
@@ -285,17 +287,23 @@ class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) ex
           .setValue(this.plugin.settings.groupBySize.toString)
           .onChange(value =>
 
-            val intValue = try {
-              (if value.isEmpty then "0" else value).toInt
+            var intValue = 1000
+            try {
+              intValue = try {
+                (if value.isEmpty then "0" else value).toInt
+              } catch {
+                case i: js.JavaScriptException => 1000
+              }
             } catch {
-              case i: js.JavaScriptException => 10
+              case ex: NumberFormatException =>
+                alert("Number is not valid")
+                intValue = 1000
             }
 
             plugin.settings.groupBySize = intValue
             plugin.saveSettings()
           )
         )
-
 
       Setting(containerElement)
         .setName("Story folder")
@@ -390,13 +398,25 @@ class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) ex
     if isDefined(plugin.settings.documentPath, "Document Path") then
       return ()
 
+    if isInvalidValidFileName(plugin.settings.documentPath, "Document Path") then
+      return ()
+
     if isDefined(plugin.settings.storyFolder, "Story Folder") then
+      return ()
+
+    if isInvalidValidFileName(plugin.settings.storyFolder, "Story Path") then
       return ()
 
     if isDefined(plugin.settings.solutionFolder, "Solution Folder") then
       return ()
 
+    if isInvalidValidFileName(plugin.settings.solutionFolder, "Solution Folder") then
+      return ()
+
     if isDefined(plugin.settings.markersPath, "Markers Path") then
+      return ()
+
+    if isInvalidValidFileName(plugin.settings.markersPath, "Markers Folder") then
       return ()
 
     if plugin.settings.sleepLength <= 500 then
@@ -418,6 +438,13 @@ class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) ex
   private def isDefined(string : String, errorMessage : String) =
     if string.isEmpty || string.equalsIgnoreCase(UNDEFINED) then
       alert(s"${errorMessage} must be defined.")
+      true
+    else
+      false
+
+  private def isInvalidValidFileName(fileName : String, displayName : String) =
+    if !Utils.fileAndPathExp.matches(fileName) then
+      alert(s"$displayName must consist of alpha numeric characters, spaces or '-' separated by ${Utils.separator}.")
       true
     else
       false

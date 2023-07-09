@@ -2,8 +2,12 @@ package utils
 
 import docscanner.ScanSource.path
 
+import org.scalajs.dom.window.alert
+
 import scala.collection.mutable
 import scalajs.js.Dynamic.global as g
+import scalajs.js
+
 import typings.node.fsMod
 import typings.node.fsMod.PathLike
 
@@ -15,7 +19,7 @@ object Utils:
   private val path = g.require("path")
   val separator : String = path.sep.asInstanceOf[String]
   val markerRegExp = """( |\t)\^([a-zA-Z0-9]+\-)*[a-zA-Z0-9]+\-[0-9]+""".r
-
+  val fileAndPathExp = s"""([a-zA-Z0-9 -]+${separator})*[a-zA-Z0-9 -]+""".r
 
   //
   // The name of the file location of the current-gitBranchToScan.txt file
@@ -31,8 +35,8 @@ object Utils:
   def getBranchNameFileLocation(appPath : String) : Boolean =
     var path = appPath.split(separator)
     while
-      val folderName = getAllFolderNames(path.mkString(separator))
-      path.length > 1 && !folderName.exists(_.endsWith(".git"))
+      val folderNames = getAllFolderNames(path.mkString(separator))
+      path.length > 1 && folderNames.nonEmpty && !folderNames.exists(_.endsWith(".git"))
     do
       path = path.dropRight(1)
 
@@ -65,8 +69,13 @@ object Utils:
           files += s"$dir$separator$file"
       })
 
-    walkRecurse(dir.trim)
-    files.toList
+    try {
+      walkRecurse(dir.trim)
+      files.toList
+    } catch { case ex : js.JavaScriptException =>
+      alert("Invalid file path")
+      List[String]()
+    }
 
   /**
    * ## getAllFolderNames
@@ -88,6 +97,12 @@ object Utils:
           files += s"$dir$separator$file"
       })
 
-    walkRecurse(dir)
-    files.toList
+    try {
+      walkRecurse(dir.trim)
+      files.toList
+    } catch {
+      case ex: js.JavaScriptException =>
+        alert("Invalid file path")
+        List[String]()
+    }
 
