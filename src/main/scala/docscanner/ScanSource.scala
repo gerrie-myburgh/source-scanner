@@ -154,7 +154,7 @@ object ScanSource:
             val stat = fsMod.statSync(documentNameAndPath)
             ( false, stat )
           } catch {
-            case i : js.JavaScriptException => println("File to be created")
+            case i : js.JavaScriptException => ()
             fsMod.writeFileSync(documentNameAndPath, "")
             fsMod.statSync(documentNameAndPath)
             ( true, null )
