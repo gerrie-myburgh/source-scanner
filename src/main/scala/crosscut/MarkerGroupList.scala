@@ -16,8 +16,9 @@ import scala.collection.mutable
  */
 object MarkerGroupList:
 
-  private type DOCNAME = String
-  private type MARKER = String
+  private type DOCNAME  = String
+  private type DOCNAMES = mutable.HashSet[String]
+  private type MARKER   = String
 
   def apply(app: mod.App, markerFile : String, documentFolder: String): Unit =
     val vaultPath = app.vault.adapter.asInstanceOf[FileSystemAdapter].getBasePath()
@@ -25,7 +26,7 @@ object MarkerGroupList:
     //
     // some containers to use later on
     //
-    val markerToDocumentMap = mutable.HashMap[MARKER, DOCNAME]()
+    val markerToDocumentMap = mutable.HashMap[MARKER, DOCNAMES]()
     val allSolutionFiles = mutable.ArrayBuffer[MARKER]()
     //
     // get all the doc files to scan
@@ -50,7 +51,9 @@ object MarkerGroupList:
       val docName = docFile.split(Utils.separator).last
 
       markersPerDocument.foreach(marker =>
-        markerToDocumentMap += (marker -> docName)
+        if !markerToDocumentMap.contains(marker) then
+          markerToDocumentMap += (marker -> mutable.HashSet[String]())
+        markerToDocumentMap(marker) +=  docName
       )
     )
     //
@@ -72,11 +75,13 @@ object MarkerGroupList:
     val mdString = StringBuilder(s"|marker|document|\n")
     mdString ++=                 s"|------|--------|\n"
     allMarkers.foreach(marker =>
-      val docName = markerToDocumentMap(marker)
+      val docNameSet = markerToDocumentMap(marker)
       //
-      // build marker to doc entry
+      // build marker to doc entry from the set of document names.
       //
-      mdString ++= s"|${marker.drop(1)}|[[$docName#$marker]]\n"
+      docNameSet.foreach(docName =>
+        mdString ++= s"|${marker.drop(1)}|[[$docName#$marker]]\n"
+      )
     )
     //
     // write of the solution text
