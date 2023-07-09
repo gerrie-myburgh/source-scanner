@@ -407,8 +407,8 @@ class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) ex
     if isInvalidValidFileName(plugin.settings.markersPath, "Markers Folder") then
       return ()
 
-    if plugin.settings.sleepLength <= 500 then
-      alert("Sleep length must be greater than 500 milliseconds.")
+    if plugin.settings.sleepLength < 500 then
+      alert("Sleep length must be greater-equal to 500 milliseconds.")
       return ()
 
     if plugin.settings.groupBySize <= 0 then
