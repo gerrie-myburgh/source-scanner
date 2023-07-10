@@ -12,7 +12,7 @@ import scala.collection.mutable
 
 /**
  * # object MarkerGroupList
- *
+ * Create a table of markers to the marker file.
  */
 object MarkerGroupList:
 
@@ -48,7 +48,7 @@ object MarkerGroupList:
 
       markerlist ++= markersPerDocument
 
-      val docName = docFile.split(Utils.separator).last
+      val docName = docFile.split(Utils.separatorRegEx).last
 
       markersPerDocument.foreach(marker =>
         if !markerToDocumentMap.contains(marker) then
@@ -69,7 +69,7 @@ object MarkerGroupList:
     //
     // write out the sorted markers. Make sure the path exist
     //
-    val pathToCreate = markerFileNameWithPath.split(Utils.separator).dropRight(1).mkString(Utils.separator)
+    val pathToCreate = markerFileNameWithPath.split(Utils.separatorRegEx).dropRight(1).mkString(Utils.separator)
     fsMod.mkdirSync(pathToCreate, l(recursive = true).asInstanceOf[fsMod.MakeDirectoryOptions])
 
     val mdString = StringBuilder(s"|marker|document|\n")

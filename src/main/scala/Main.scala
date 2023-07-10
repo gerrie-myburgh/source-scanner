@@ -190,19 +190,24 @@ class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) ex
         .addButton(button => button
           .setButtonText("SELECT APPLICATION PATH")
           .onClick((cb : MouseEvent) =>
+
+            println(Utils.fileAndPathExp)
+            println(Utils.markerRegExp)
+
             val dlg = g.require("electron").remote.dialog
             val pathName = dlg.showOpenDialogSync(
               l(title = "Source path", properties = js.Array("openDirectory"))
             )
+
             if !js.isUndefined(pathName) then
               plugin.settings.applicationPath = pathName.toString
 
-              if !Utils.getBranchNameFileLocation(pathName.toString) then
-                alert(s"git not found in application path.")
+            //if !Utils.getBranchNameFileLocation(pathName.toString) then
+            //  alert(s"git not found in application path.")
 
 
-              plugin.saveSettings()
-              appPathSetting.setDesc(s"Path to application workspace: ${this.plugin.settings.applicationPath}")
+            plugin.saveSettings()
+            appPathSetting.setDesc(s"Path to application workspace: ${this.plugin.settings.applicationPath}")
           )
         )
 

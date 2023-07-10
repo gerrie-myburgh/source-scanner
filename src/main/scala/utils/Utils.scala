@@ -19,12 +19,17 @@ object Utils:
   private val path = g.require("path")
   val separator : String = path.sep.asInstanceOf[String]
   val markerRegExp = """( |\t)\^([a-zA-Z0-9]+\-)*[a-zA-Z0-9]+\-[0-9]+""".r
-  val fileAndPathExp = s"""([a-zA-Z0-9 -]+${separator})*[a-zA-Z0-9 -]+""".r
+  val fileAndPathExp = s"""([a-zA-Z0-9 -]+${
+    if separator.equalsIgnoreCase("""\""") then """\\""" else """/"""
+  })*[a-zA-Z0-9 -]+""".r
 
   //
   // The name of the file location of the current-branch.txt file
   //
   var branchNameLocation : Option[String] = None
+
+  def separatorRegEx =
+    if separator.equalsIgnoreCase("""\""") then """\\""" else """/"""
 
   /**
    * ## getBranchNameFileLocation
@@ -33,7 +38,7 @@ object Utils:
    * @Return - true of found false if not found
    */
   def getBranchNameFileLocation(appPath : String) : Boolean =
-    var path = appPath.split(separator)
+    var path = appPath.split(separatorRegEx)
     while
       val folderNames = getAllFolderNames(path.mkString(separator))
       path.length > 1 && folderNames.nonEmpty && !folderNames.exists(_.endsWith(".git"))

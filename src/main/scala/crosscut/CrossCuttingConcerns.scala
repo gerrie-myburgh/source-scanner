@@ -34,7 +34,7 @@ object CrossCuttingConcerns:
 
     val markerMappings : Map[String, String] = if markerMapping.nonEmpty then
       markerMapping
-        .split("\n")
+        .split("""\n""")
         .map( value =>
           if value.contains("=") then
             val lst = value.split("=")
@@ -78,7 +78,7 @@ object CrossCuttingConcerns:
 
       markerlist ++= markersPerDocument
 
-      val documentName = docFile.split(Utils.separator).last
+      val documentName = docFile.split(Utils.separatorRegEx).last
 
       markersPerDocument.foreach(marker =>
         markerToDocumentMap += (marker -> documentName)
@@ -135,7 +135,7 @@ object CrossCuttingConcerns:
       //
       // create the folder path if required
       //
-      val pathToCreate = solNameWithPath.split(Utils.separator).dropRight(1).mkString(Utils.separator)
+      val pathToCreate = solNameWithPath.split(Utils.separatorRegEx).dropRight(1).mkString(Utils.separator)
       fsMod.mkdirSync(pathToCreate, l(recursive =  true).asInstanceOf[fsMod.MakeDirectoryOptions])
       //
       // write of the solution text
@@ -157,7 +157,7 @@ object CrossCuttingConcerns:
    * @return the story name
    */
   private def getStoryFileName(solName : SOLNAME, mapping : Map[String, String]) : String =
-    val nameList = solName.split(Utils.separator).drop(1)
+    val nameList = solName.split(Utils.separatorRegEx).drop(1)
     val storyName = nameList.last
     if mapping.contains(storyName) then
       s"${nameList.dropRight(1).mkString(Utils.separator)}${mapping(storyName)}"

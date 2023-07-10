@@ -206,5 +206,5 @@ object ScanSource:
    */
   private def createDocNameFromSourceName(sourceFile : String) =
     val docPath = s"${sourceFile.drop(applicationPath.length + 1).dropRight(codeExtension.length)}.md"
-    val docName = docPath.replace('/', '.')
+    val docName = docPath.replace(Utils.separator, ".")
     docName
