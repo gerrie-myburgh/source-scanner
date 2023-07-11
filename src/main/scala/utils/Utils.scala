@@ -28,6 +28,9 @@ object Utils:
   //
   var branchNameLocation : Option[String] = None
 
+  //
+  // make sure the separator regex does not have single '\'
+  //
   def separatorRegEx =
     if separator.equalsIgnoreCase("""\""") then """\\""" else """/"""
 

@@ -4,9 +4,11 @@ import org.scalajs.dom
 import org.scalajs.dom.window.alert
 import org.scalajs.dom.{HTMLSpanElement, MouseEvent}
 import typings.electron.Electron.ReadBookmark
-import typings.obsidian.mod.{App, Command, Menu, Modal, Notice, Plugin, PluginManifest, PluginSettingTab, Setting, TextComponent, ViewState}
+import typings.obsidian.mod.{App, Command, FileSystemAdapter, Menu, Modal, Notice, Plugin, PluginManifest, PluginSettingTab, Setting, TextComponent, ViewState}
 import typings.obsidian.obsidianStrings
 import typings.obsidian.publishMod.global.HTMLElement
+import typings.node.fsMod
+import typings.node.fsMod.*
 import typings.std.{IArguments, Partial, global}
 import utils.Utils
 
@@ -167,6 +169,8 @@ class ScannerObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(
 class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) extends PluginSettingTab(app, plugin):
   private val UNDEFINED = "UNDEFINED"
 
+  private val vaultPath = app.vault.adapter.asInstanceOf[FileSystemAdapter].getBasePath()
+
   /**
    * ## display()
    * Allow the user to set the parameters
@@ -226,6 +230,7 @@ class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) ex
             .setPlaceholder("Enter the documentation path")
             .setValue(this.plugin.settings.documentPath)
             .onChange(value =>
+
               plugin.settings.documentPath = value
               plugin.saveSettings()
             )
@@ -317,6 +322,8 @@ class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) ex
             plugin.saveSettings()
           )
         )
+
+
 
       Setting(containerElement)
         .setName("Mapping of markers to md file names")

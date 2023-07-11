@@ -108,7 +108,7 @@ object CrossCuttingConcerns:
       //
       // build link to story
       //
-      val mdString = StringBuilder(s"""![[$storyFolder${Utils.separator}${getStoryFileName(solName.dropRight(3), markerMappings)}#^summary]]\n""")
+      val mdString = StringBuilder(s"""![[$storyFolder/${getStoryFileName(solName.dropRight(3), markerMappings)}#^summary]]\n""")
       markers.foreach(marker =>
         //
         // build links to document thread
@@ -140,7 +140,7 @@ object CrossCuttingConcerns:
 
   /**
    * given the solution name return the story name, if the story name is in mapping then use that rather
-   *
+   * Note that separator is '/' and not the os separator. Vault path naming convention is '/'
    * @param solName to use for the story name
    * @return the story name
    */
@@ -148,9 +148,9 @@ object CrossCuttingConcerns:
     val nameList = solName.split(Utils.separatorRegEx).drop(1)
     val storyName = nameList.last
     if mapping.contains(storyName) then
-      s"${nameList.dropRight(1).mkString(Utils.separator)}${mapping(storyName)}"
+      s"${nameList.dropRight(1).mkString("/")}${mapping(storyName)}"
     else
-      nameList.mkString(Utils.separator)
+      nameList.mkString("/")
 
   /**
    * Take a marker string and convert into file path / file name.md. If the marker excluding the -[0-9]+
