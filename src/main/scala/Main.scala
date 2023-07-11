@@ -199,9 +199,8 @@ class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) ex
             if !js.isUndefined(pathName) then
               plugin.settings.applicationPath = pathName.toString
 
-            //if !Utils.getBranchNameFileLocation(pathName.toString) then
-            //  alert(s"git not found in application path.")
-
+            if !Utils.getBranchNameFileLocation(pathName.toString) then
+              alert(s"git not found in application path.")
 
             plugin.saveSettings()
             appPathSetting.setDesc(s"Path to application workspace: ${this.plugin.settings.applicationPath}")
