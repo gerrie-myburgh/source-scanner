@@ -191,9 +191,6 @@ class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) ex
           .setButtonText("SELECT APPLICATION PATH")
           .onClick((cb : MouseEvent) =>
 
-            println(Utils.fileAndPathExp)
-            println(Utils.markerRegExp)
-
             val dlg = g.require("electron").remote.dialog
             val pathName = dlg.showOpenDialogSync(
               l(title = "Source path", properties = js.Array("openDirectory"))

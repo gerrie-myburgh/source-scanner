@@ -34,7 +34,7 @@ object CrossCuttingConcerns:
 
     val markerMappings : Map[String, String] = if markerMapping.nonEmpty then
       markerMapping
-        .split("""\n""")
+        .split("\n")
         .map( value =>
           if value.contains("=") then
             val lst = value.split("=")
@@ -58,16 +58,17 @@ object CrossCuttingConcerns:
     val documentPath = s"$vaultPath${Utils.separator}$docFolder"
     val documentFiles = Utils.walk(documentPath).filter(name => name.endsWith(".md")).toList
     //
-    //bus remove all the solution files
+    //bus remove all the solution files and the then empty solution folder
     //
     val solutionPath = s"$vaultPath${Utils.separator}$solutionFolder"
     val solutionFiles = Utils.walk(solutionPath).filter(name => name.endsWith(".md")).toList
     solutionFiles.foreach(file => fsMod.unlinkSync(file))
+    fsMod.rmSync(solutionPath, l(recursive =  true, force = true).asInstanceOf[fsMod.RmOptions])
     //
     // pick up all markers in the doc string doc file by doc file and aggregate the markers
     // before processing them
     //
-    val markerlist = mutable.ListBuffer[String]()
+    val markerList = mutable.ListBuffer[String]()
     documentFiles.foreach(docFile =>
       val str = fsMod.readFileSync(docFile, l(encoding = "utf8", flag = "r")
         .asInstanceOf[ObjectEncodingOptionsflagEncoding])
@@ -76,7 +77,7 @@ object CrossCuttingConcerns:
       val markersMatch = Utils.markerRegExp.findAllMatchIn(str)
       val markersPerDocument = markersMatch.map(marker => str.substring(marker.start, marker.end).trim).toList
 
-      markerlist ++= markersPerDocument
+      markerList ++= markersPerDocument
 
       val documentName = docFile.split(Utils.separatorRegEx).last
 
@@ -86,19 +87,6 @@ object CrossCuttingConcerns:
 
       documentToMarkerMap += (documentName -> markersPerDocument)
 
-    )
-
-    val allLocalMarkerNames = markerlist.map(marker =>
-      marker.drop(1).split("-").dropRight(1).mkString("-")
-    ).toSet.asInstanceOf[Set[MARKER]]
-
-    allSolutionFiles ++= allLocalMarkerNames
-    //
-    // make sure the paths exist for every solutions file
-    //
-    allSolutionFiles.foreach(file =>
-      val solFile =  solutionPathFromMarker(solutionFolder, file)
-      fsMod.mkdirSync(solFile, l(recursive =  true).asInstanceOf[fsMod.MakeDirectoryOptions])
     )
     //
     // collect all markers in one list
