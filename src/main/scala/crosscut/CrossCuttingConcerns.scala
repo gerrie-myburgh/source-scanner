@@ -3,7 +3,8 @@ package crosscut
 import typings.node.anon.ObjectEncodingOptionsflagEncoding
 import typings.node.fsMod
 import typings.obsidian.mod
-import typings.obsidian.mod.FileSystemAdapter
+import typings.obsidian.mod.{ListedFiles, FileSystemAdapter, TFile, TFolder}
+import typings.obsidian.publishMod.global.sleep
 import utils.Utils
 
 import scala.collection.immutable.HashSet
@@ -11,6 +12,9 @@ import scala.collection.mutable
 import scala.language.postfixOps
 import scala.scalajs.js
 import scala.scalajs.js.Dynamic.literal as l
+import scala.scalajs.js.JSConverters.*
+import concurrent.ExecutionContext.Implicits.global
+import scala.util.{Failure, Success, Try}
 
 /**
  * # object CrossCuttingConcerns
@@ -30,7 +34,8 @@ object CrossCuttingConcerns:
     //
     //bus if a mapping string has been defined then get the mappings : format is 'marker'='mapping-value'
     //
-    val vaultPath = app.vault.adapter.asInstanceOf[FileSystemAdapter].getBasePath()
+    val fsa = app.vault.adapter.asInstanceOf[FileSystemAdapter]
+    val vaultPath = fsa.getBasePath()
 
     val markerMappings : Map[String, String] = if markerMapping.nonEmpty then
       markerMapping
@@ -59,11 +64,23 @@ object CrossCuttingConcerns:
     val documentFiles = Utils.walk(documentPath).filter(name => name.endsWith(".md")).toList
     //
     //bus remove all the solution files and the then empty solution folder
-    //
+    // -----------------------------------------------------------------------------------------------------------------
     val solutionPath = s"$vaultPath${Utils.separator}$solutionFolder"
-    val solutionFiles = Utils.walk(solutionPath).filter(name => name.endsWith(".md")).toList
-    solutionFiles.foreach(file => fsMod.unlinkSync(file))
-    fsMod.rmSync(solutionPath, l(recursive =  true, force = true).asInstanceOf[fsMod.RmOptions])
+
+    val solutionFiles = Utils.walk(solutionPath)
+    val filesToDelete = solutionFiles
+      .map(fileName => fileName.drop(vaultPath.length + 1).split(Utils.separatorRegEx).mkString("/"))
+      .filter(name => name.endsWith(".md"))
+      .toList
+
+    filesToDelete.foreach(fileName =>
+      fsa.remove(fileName).toFuture.foreach(Unit => ())
+    )
+
+    fsa.rmdir(solutionFolder, true).toFuture.foreach(Unit => ())
+    fsa.mkdir(solutionFolder).toFuture.foreach(Unit => ())
+
+    // -----------------------------------------------------------------------------------------------------------------
     //
     // pick up all markers in the doc string doc file by doc file and aggregate the markers
     // before processing them
@@ -115,11 +132,10 @@ object CrossCuttingConcerns:
         //
         mdString ++= s"""![[${markerToDocumentMap(marker)}#${marker}]]\n"""
       )
-      //
-      // remove solution file it exists and recreate with new values.
-      //
       val marker = markers.head.drop(1).split("-").dropRight(1).mkString("-")
-      val solNameWithPath = getSolutionFileName(marker, s"$vaultPath${Utils.separator}$solName", markerMappings)
+      //val solNameWithPath = getSolutionFileName(marker, s"$vaultPath${Utils.separator}$solName", markerMappings)
+      val solNameWithPath = getSolutionFileName(marker, s"$solName", markerMappings)
+
       //
       // create the folder path if required
       //
@@ -128,7 +144,8 @@ object CrossCuttingConcerns:
       //
       // write of the solution text
       //
-      fsMod.writeFile(solNameWithPath, mdString.toString(), err => ())
+      app.vault.create(solNameWithPath, mdString.toString())
+      //fsMod.writeFile(solNameWithPath, mdString.toString(), err => ())
     )
 
   private def getSolutionFileName(marker : String,  solName : String, mapping : Map[String, String]) : String =
@@ -148,7 +165,7 @@ object CrossCuttingConcerns:
     val nameList = solName.split(Utils.separatorRegEx).drop(1)
     val storyName = nameList.last
     if mapping.contains(storyName) then
-      s"${nameList.dropRight(1).mkString("/")}${mapping(storyName)}"
+      s"${nameList.dropRight(1).mkString("/#")}${mapping(storyName)}"
     else
       nameList.mkString("/")
 

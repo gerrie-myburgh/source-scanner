@@ -81,7 +81,7 @@ object Utils:
       walkRecurse(dir.trim)
       files.toList
     } catch { case ex : js.JavaScriptException =>
-      alert("Invalid file path")
+      alert(s"Invalid file path $dir")
       List[String]()
     }
 
@@ -110,7 +110,7 @@ object Utils:
       files.toList
     } catch {
       case ex: js.JavaScriptException =>
-        alert("Invalid file path")
+        alert(s"Invalid file path $dir")
         List[String]()
     }
 
