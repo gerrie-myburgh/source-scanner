@@ -1,7 +1,6 @@
 package crosscut
 
 import typings.node.anon.ObjectEncodingOptionsflagEncoding
-import typings.node.fsMod
 import typings.obsidian.mod
 import typings.obsidian.mod.{FileSystemAdapter, ListedFiles, TFile, TFolder}
 import typings.obsidian.publishMod.global.sleep
