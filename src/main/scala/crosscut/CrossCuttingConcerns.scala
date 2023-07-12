@@ -3,7 +3,7 @@ package crosscut
 import typings.node.anon.ObjectEncodingOptionsflagEncoding
 import typings.node.fsMod
 import typings.obsidian.mod
-import typings.obsidian.mod.{ListedFiles, FileSystemAdapter, TFile, TFolder}
+import typings.obsidian.mod.{FileSystemAdapter, ListedFiles, TFile, TFolder}
 import typings.obsidian.publishMod.global.sleep
 import utils.Utils
 
@@ -14,6 +14,7 @@ import scala.scalajs.js
 import scala.scalajs.js.Dynamic.literal as l
 import scala.scalajs.js.JSConverters.*
 import concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
 /**
@@ -58,10 +59,6 @@ object CrossCuttingConcerns:
     val solutionToMarkerMap     = mutable.HashMap[SOLNAME, List[MARKER]]()
     val allSolutionFiles        = mutable.HashSet[MARKER]()
     //
-    // get all the doc files to scan
-    //
-    val documentFiles = Utils.walkInVault(fsa, docFolder).filter(name => name.endsWith(".md")).toList
-    //
     //bus remove all the solution files and the then empty solution folder
     // -----------------------------------------------------------------------------------------------------------------
     val solutionFiles = Utils.walkInVault(fsa, solutionFolder)
@@ -79,71 +76,78 @@ object CrossCuttingConcerns:
 
     // -----------------------------------------------------------------------------------------------------------------
     //
+    // get all the doc files to scan
+    //
+    val documentFiles = Utils.listMDFilesInVault(fsa, docFolder)
+    //
     // pick up all markers in the doc string doc file by doc file and aggregate the markers
     // before processing them
     //
+    val allFutures = mutable.ListBuffer[Future[Unit]]()
     val markerList = mutable.ListBuffer[String]()
+
     documentFiles.foreach(docFile =>
-      val str = fsMod.readFileSync(docFile, l(encoding = "utf8", flag = "r")
-        .asInstanceOf[ObjectEncodingOptionsflagEncoding])
-        .asInstanceOf[String]
+      allFutures += fsa.read(docFile).toFuture.map(str =>
 
-      val markersMatch = Utils.markerRegExp.findAllMatchIn(str)
-      val markersPerDocument = markersMatch.map(marker => str.substring(marker.start, marker.end).trim).toList
+        val markersMatch = Utils.markerRegExp.findAllMatchIn(str)
+        val markersPerDocument = markersMatch.map(marker => str.substring(marker.start, marker.end).trim).toList
 
-      markerList ++= markersPerDocument
+        markerList ++= markersPerDocument
 
-      val documentName = docFile.split(Utils.separatorRegEx).last
+        val documentName = docFile.split("/").last
 
-      markersPerDocument.foreach(marker =>
-        markerToDocumentMap += (marker -> documentName)
+        markersPerDocument.foreach(marker =>
+          markerToDocumentMap += (marker -> documentName)
+        )
+
+        documentToMarkerMap += (documentName -> markersPerDocument)
+
       )
-
-      documentToMarkerMap += (documentName -> markersPerDocument)
-
     )
     //
-    // collect all markers in one list
-    // sort them then
-    // group by path/name.md excluding the seq number
+    // wait for all work to be done
     //
-    val allMarkers = documentToMarkerMap
-      .values
-      .toList
-      .flatten
-      .sortWith( (s1, s2) =>
-        s1 < s2
-      )
-      .groupBy(by => solutionDocNameFromMarker(solutionFolder, by))
-    //
-    // write out
-    //
-    allMarkers.foreach( ( solName, markers ) =>
-      //
-      // build link to story
-      //
-      val mdString = StringBuilder(s"""![[$storyFolder/${getStoryFileName(solName.dropRight(3), markerMappings)}#^summary]]\n""")
-      markers.foreach(marker =>
-        //
-        // build links to document thread
-        //
-        mdString ++= s"""![[${markerToDocumentMap(marker)}#${marker}]]\n"""
-      )
-      val marker = markers.head.drop(1).split("-").dropRight(1).mkString("-")
-      //val solNameWithPath = getSolutionFileName(marker, s"$vaultPath${Utils.separator}$solName", markerMappings)
-      val solNameWithPath = getSolutionFileName(marker, s"$solName", markerMappings)
+    val waitingForFutures: Future[List[Unit]] = Future.sequence(allFutures.toList)
 
-      //
-      // create the folder path if required
-      //
-      val pathToCreate = solNameWithPath.split(Utils.separatorRegEx).dropRight(1).mkString(Utils.separator)
-      fsMod.mkdirSync(pathToCreate, l(recursive =  true).asInstanceOf[fsMod.MakeDirectoryOptions])
-      //
-      // write of the solution text
-      //
-      app.vault.create(solNameWithPath, mdString.toString())
-      //fsMod.writeFile(solNameWithPath, mdString.toString(), err => ())
-    )
+    waitingForFutures.onComplete {
+      case Success(_) =>
+        //
+        // collect all markers in one list
+        // sort them then
+        // group by path/name.md excluding the seq number
+        //
+        val allMarkers = documentToMarkerMap
+          .values
+          .toList
+          .flatten
+          .sortWith((s1, s2) =>
+            s1 < s2
+          )
+          .groupBy(by => solutionDocNameFromMarker(solutionFolder, by))
+        //
+        // write out
+        //
+        allMarkers.foreach((solName, markers) =>
+          //
+          // build link to story
+          //
+          val mdString = StringBuilder(s"""![[$storyFolder/${getStoryFileName(solName.dropRight(3), markerMappings)}#^summary]]\n""")
+          markers.foreach(marker =>
+            //
+            // build links to document thread
+            //
+            mdString ++= s"""![[${markerToDocumentMap(marker)}#${marker}]]\n"""
+          )
+          val marker = markers.head.drop(1).split("-").dropRight(1).mkString("-")
+          val solNameWithPath = getSolutionFileName(marker, s"$solName", markerMappings)
+          //
+          // create the folder path if required and write out text
+          //
+          Utils.makeDirInVault(fsa, solNameWithPath)
+          fsa.write(solNameWithPath, mdString.toString())
+        )
+      case Failure(ex) => println(s"Failed to complete all futures: ${ex.getMessage}")
+    }
 
   private def getSolutionFileName(marker : String,  solName : String, mapping : Map[String, String]) : String =
     // get solution name strip off the .md
@@ -174,7 +178,7 @@ object CrossCuttingConcerns:
    */
   private def solutionDocNameFromMarker(solFolder : String, marker : String): SOLNAME =
     val markerList = marker.drop(1).split("-")
-    val docName = markerList.dropRight(1).mkString(Utils.separator)
+    val docName = markerList.dropRight(1).mkString("/")
     val solutionName = s"${docName}.md"
     s"""$solFolder${Utils.separator}$solutionName"""
 
