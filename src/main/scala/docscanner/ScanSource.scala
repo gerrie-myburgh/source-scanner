@@ -85,11 +85,11 @@ object ScanSource:
     //
     // make sure the doc path relative from vault exist - if not create this path
     //
-    val vaultPath = app.vault.adapter.asInstanceOf[FileSystemAdapter].getBasePath()
-    documentPath = s"$vaultPath${Utils.separator}$documentPath"
+    val fsa = app.vault.adapter.asInstanceOf[FileSystemAdapter]
+    val vaultPath = fsa.getBasePath()
     fsMod.mkdirSync(documentPath, l(recursive =  true).asInstanceOf[fsMod.MakeDirectoryOptions])
 
-    timers.setInterval(sleepLength)(this.run())
+    timers.setInterval(sleepLength)(this.run(fsa))
 
   /**
    * ## private def isBranchStillActive() : Boolean =
@@ -113,7 +113,7 @@ object ScanSource:
     else
       false
 
-  private def run() : Unit =
+  private def run(fsa : FileSystemAdapter) : Unit =
     //
     // if the current gitBranchToScan is the defined gitBranchToScan then go ahead an process else do not process
     //
@@ -133,7 +133,7 @@ object ScanSource:
     // get list of document files
     //
     if phaseCount == 2 then
-      documentFileListWithExtension = Utils.walk(documentPath
+      documentFileListWithExtension = Utils.walkInVault(fsa, documentPath
         .asInstanceOf[String])
         .filter(file => file.endsWith(".md"))
     //
@@ -154,7 +154,7 @@ object ScanSource:
             val stat = fsMod.statSync(documentNameAndPath)
             ( false, stat )
           } catch {
-            case i : js.JavaScriptException => ()
+            case i : js.JavaScriptException => println("Document created")
             fsMod.writeFileSync(documentNameAndPath, "")
             fsMod.statSync(documentNameAndPath)
             ( true, null )

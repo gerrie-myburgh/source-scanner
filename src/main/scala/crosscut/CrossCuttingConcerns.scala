@@ -60,14 +60,11 @@ object CrossCuttingConcerns:
     //
     // get all the doc files to scan
     //
-    val documentPath = s"$vaultPath${Utils.separator}$docFolder"
-    val documentFiles = Utils.walk(documentPath).filter(name => name.endsWith(".md")).toList
+    val documentFiles = Utils.walkInVault(fsa, docFolder).filter(name => name.endsWith(".md")).toList
     //
     //bus remove all the solution files and the then empty solution folder
     // -----------------------------------------------------------------------------------------------------------------
-    val solutionPath = s"$vaultPath${Utils.separator}$solutionFolder"
-
-    val solutionFiles = Utils.walk(solutionPath)
+    val solutionFiles = Utils.walkInVault(fsa, solutionFolder)
     val filesToDelete = solutionFiles
       .map(fileName => fileName.drop(vaultPath.length + 1).split(Utils.separatorRegEx).mkString("/"))
       .filter(name => name.endsWith(".md"))

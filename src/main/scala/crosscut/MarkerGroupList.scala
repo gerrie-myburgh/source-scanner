@@ -21,7 +21,8 @@ object MarkerGroupList:
   private type MARKER   = String
 
   def apply(app: mod.App, markerFile : String, documentFolder: String): Unit =
-    val vaultPath = app.vault.adapter.asInstanceOf[FileSystemAdapter].getBasePath()
+    val fsa = app.vault.adapter.asInstanceOf[FileSystemAdapter]
+    val vaultPath = fsa.getBasePath()
     val markerFileNameWithPath = s"$vaultPath${Utils.separator}$markerFile.md"
     //
     // some containers to use later on
@@ -31,8 +32,7 @@ object MarkerGroupList:
     //
     // get all the doc files to scan
     //
-    val documentPath = s"$vaultPath${Utils.separator}$documentFolder"
-    val documentFiles = Utils.walk(documentPath).filter(name => name.endsWith(".md")).toList
+    val documentFiles = Utils.walkInVault(fsa, documentFolder).filter(name => name.endsWith(".md")).toList
     //
     // pick up all markers in the doc string doc file by doc file and aggregate the markers
     // before processing them

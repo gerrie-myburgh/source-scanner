@@ -1,15 +1,14 @@
 package utils
 
 import docscanner.ScanSource.path
-
 import org.scalajs.dom.window.alert
 
 import scala.collection.mutable
 import scalajs.js.Dynamic.global as g
 import scalajs.js
-
 import typings.node.fsMod
 import typings.node.fsMod.PathLike
+import typings.obsidian.mod.FileSystemAdapter
 
 /**
  * # object Utils
@@ -54,6 +53,37 @@ object Utils:
     else
       branchNameLocation = None
       false
+
+  /**
+   * ## walk
+   * Get all files below dir recursively
+   *
+   * @param dir the start folder
+   * @return list of files contained in dir
+   */
+  def walkInVault(fsa : FileSystemAdapter, dir: String): List[String] =
+
+    val files = mutable.ListBuffer[String]()
+
+    def walkRecurse(dir: String): Unit =
+      val dirFiles = fsMod.readdirSync(dir).toList
+      dirFiles.foreach(file => {
+        val p = path.join(dir, file).asInstanceOf[PathLike]
+        val stat = fsMod.lstatSync(p)
+        if stat.get.isDirectory() then
+          walkRecurse(s"$dir$separator$file")
+        else
+          files += s"$dir$separator$file"
+      })
+
+    try {
+      walkRecurse(s"${fsa.getBasePath()}$separator${dir.trim}")
+      files.toList
+    } catch {
+      case ex: js.JavaScriptException =>
+        alert(s"Invalid file path $dir")
+        List[String]()
+    }
 
   /**
    * ## walk
