@@ -55,12 +55,56 @@ object Utils:
       false
 
   /**
+   * ## makeDirInVault
+   * Make a folder path in the vault
+   * @param fsa
+   * @param filePathAndName
+   */
+  def makeDirInVault(fsa: FileSystemAdapter, filePathAndName : String) =
+    var path = filePathAndName.split(separatorRegEx).dropRight(1)
+    val constructedPath = mutable.ListBuffer[String]()
+    while
+      path.nonEmpty
+    do
+      constructedPath += path(0)
+      fsa.mkdir(constructedPath.mkString("/"))
+      path = path.drop(1).toArray
+
+  /**
    * ## walk
    * Get all files below dir recursively
    *
    * @param dir the start folder
    * @return list of files contained in dir
    */
+  def listMDFilesInVault(fsa: FileSystemAdapter, dir: String): List[String] =
+
+    val files = mutable.ListBuffer[String]()
+
+    def walkRecurse(dir: String): Unit =
+      val dirFiles = fsMod.readdirSync(dir).toList
+      dirFiles.foreach(file => {
+        val p = path.join(dir, file).asInstanceOf[PathLike]
+        val stat = fsMod.lstatSync(p)
+        if stat.get.isDirectory() then
+          walkRecurse(s"$dir$separator$file")
+        else
+          files += s"$dir$separator$file"
+      })
+
+    try {
+      val basePath = s"${fsa.getBasePath()}$separator"
+
+      walkRecurse(s"$basePath${dir.trim}")
+      files
+        .filter(fileName => fileName.endsWith(".md"))
+        .map(fileName => fileName.drop(basePath.length).replace(separator, "/"))
+        .toList
+    } catch {
+      case ex: js.JavaScriptException =>
+        alert(s"Invalid file path $dir")
+        List[String]()
+    }
   def walkInVault(fsa : FileSystemAdapter, dir: String): List[String] =
 
     val files = mutable.ListBuffer[String]()
