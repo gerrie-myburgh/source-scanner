@@ -35,7 +35,6 @@ object CrossCuttingConcerns:
     //bus if a mapping string has been defined then get the mappings : format is 'marker'='mapping-value'
     //
     val fsa = app.vault.adapter.asInstanceOf[FileSystemAdapter]
-    val vaultPath = fsa.getBasePath()
 
     val markerMappings : Map[String, String] = if markerMapping.nonEmpty then
       markerMapping
@@ -60,11 +59,7 @@ object CrossCuttingConcerns:
     //
     //bus remove all the solution files and the then empty solution folder
     // -----------------------------------------------------------------------------------------------------------------
-    val solutionFiles = Utils.walkInVault(fsa, solutionFolder)
-    val filesToDelete = solutionFiles
-      .map(fileName => fileName.drop(vaultPath.length + 1).split(Utils.separatorRegEx).mkString("/"))
-      .filter(name => name.endsWith(".md"))
-      .toList
+    val filesToDelete = Utils.listMDFilesInVault(fsa, solutionFolder)
 
     filesToDelete.foreach(fileName =>
       fsa.remove(fileName).toFuture.foreach(Unit => ())
@@ -115,6 +110,7 @@ object CrossCuttingConcerns:
         // sort them then
         // group by path/name.md excluding the seq number
         //
+        println("A " + documentFiles)
         val allMarkers = documentToMarkerMap
           .values
           .toList
@@ -142,6 +138,7 @@ object CrossCuttingConcerns:
           //
           // create the folder path if required and write out text
           //
+          println("B " + solNameWithPath)
           Utils.makeDirInVault(fsa, solNameWithPath)
           fsa.write(solNameWithPath, mdString.toString())
         )
@@ -150,10 +147,12 @@ object CrossCuttingConcerns:
 
   private def getSolutionFileName(marker : String,  solName : String, mapping : Map[String, String]) : String =
     // get solution name strip off the .md
-    if mapping.contains(marker) then
+    val solution = if mapping.contains(marker) then
       solName.replace(marker, mapping(marker))
     else
       solName
+
+    solution.split(Utils.separatorRegEx).mkString("/")
 
   /**
    * given the solution name return the story name, if the story name is in mapping then use that rather

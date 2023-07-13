@@ -145,7 +145,7 @@ object ScanSource:
       if applicationFileListWithExtension.nonEmpty then
         applicationFileListWithExtension.head.foreach(srcFile =>
           val documentName = createDocNameFromSourceName(srcFile)
-          val documentNameAndPath = s"$documentPath${Utils.separator}$documentName"
+          val documentNameAndPath = s"$documentPath/$documentName"
 
           sourceAndDocumentLink += documentNameAndPath
           //
