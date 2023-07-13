@@ -190,6 +190,6 @@ object CrossCuttingConcerns:
   private def solutionPathFromMarker(solFolder : String, marker: String): PATHNAME =
     val markerStr = marker.drop(1)
     val markerList = markerStr.split("-").dropRight(2)
-    val pathName = s""""${markerList.dropRight(1).mkString(Utils.separator)}"""
+    val pathName = s""""${markerList.dropRight(1).mkString("/")}"""
 
     s"""$solFolder${Utils.separator}$pathName"""

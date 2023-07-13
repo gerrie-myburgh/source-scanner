@@ -188,7 +188,7 @@ object ScanSource:
       //
       documentFileListWithExtension.foreach((fileName: String) =>
         if !sourceAndDocumentLink.contains(fileName) then
-          fsMod.unlinkSync(fileName)
+          fsa.remove(fileName)
       )
 
       sourceAndDocumentLink.clear()
