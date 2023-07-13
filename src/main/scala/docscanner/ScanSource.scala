@@ -51,7 +51,7 @@ object ScanSource:
 
   /**
    * ## apply
-   * At every 2 seconds interval get all the business rules from the latest source file and write it to the document file. if the
+   * At every sleep length millliseconds interval get all the business rules from the latest source file and write it to the document file. if the
    * source file changes then delete the doc file and get newest comments from the source file
    *
    * 1. The 2 second interval must be made configurable. - Still to be implemented
@@ -105,8 +105,10 @@ object ScanSource:
         val branchName = fsMod.readFileSync(Utils.branchNameLocation.get + Utils.separator + "current-branch.txt", l(encoding = "utf8", flag = "r")
           .asInstanceOf[ObjectEncodingOptionsflagEncoding])
           .asInstanceOf[String]
-        if branchName.isEmpty || !branchName.trim.equalsIgnoreCase(gitBranchName.trim) then false
-        else true
+        if branchName.isEmpty || !branchName.trim.equalsIgnoreCase(gitBranchName.trim) then
+          false
+        else
+          true
       } catch {
         case ex  : js.JavaScriptException => true
       }
@@ -133,9 +135,7 @@ object ScanSource:
     // get list of document files
     //
     if phaseCount == 2 then
-      documentFileListWithExtension = Utils.walkInVault(fsa, documentPath
-        .asInstanceOf[String])
-        .filter(file => file.endsWith(".md"))
+      documentFileListWithExtension = Utils.listMDFilesInVault(fsa, documentPath)
     //
     // if the source if younger then the document file then
     //    load the lines from the source file and scan for comments.
@@ -144,43 +144,40 @@ object ScanSource:
     if phaseCount == 3 then
       if applicationFileListWithExtension.nonEmpty then
         applicationFileListWithExtension.head.foreach(srcFile =>
-          val docName = createDocNameFromSourceName(srcFile)
-          val documentNameAndPath = s"$documentPath${Utils.separator}$docName"
+          val documentName = createDocNameFromSourceName(srcFile)
+          val documentNameAndPath = s"$documentPath${Utils.separator}$documentName"
+
           sourceAndDocumentLink += documentNameAndPath
           //
           // if the document file does not exist then create an empty one
           //
-          val docStat = try {
-            val stat = fsMod.statSync(documentNameAndPath)
-            ( false, stat )
-          } catch {
-            case i : js.JavaScriptException => println("Document created")
-            fsMod.writeFileSync(documentNameAndPath, "")
-            fsMod.statSync(documentNameAndPath)
-            ( true, null )
-          }
+          val returnStat =  fsa.stat(documentNameAndPath).toFuture.foreach(stat =>
+            val docStat = if stat != null then
+              ( false, stat )
+            else
+              fsa.write(documentNameAndPath, "")
+              ( true, null )
 
-          try {
-            val srcStat = fsMod.statSync(srcFile)
+            try {
+              val srcStat = fsMod.statSync(srcFile)
 
-            val srcModTime = srcStat.get.mtimeMs
+              val srcModTime = srcStat.get.mtimeMs
 
-            if ( docStat._1 || docStat._2.get.mtimeMs < srcModTime ) && isBranchStillActive then
-              //
-              // get comment lines from the srcFile then open doc file for writing and write the lines to it
-              //
-              val srcLines = fsMod.readFileSync(srcFile, l(encoding = "utf8", flag = "r")
-                .asInstanceOf[ObjectEncodingOptionsflagEncoding])
-                .asInstanceOf[String]
+              if ( docStat._1 || docStat._2.mtime < srcModTime ) && isBranchStillActive then
+                //
+                // get comment lines from the srcFile then open doc file for writing and write the lines to it
+                //
+                val srcLines = fsMod.readFileSync(srcFile, l(encoding = "utf8", flag = "r")
+                  .asInstanceOf[ObjectEncodingOptionsflagEncoding])
+                  .asInstanceOf[String]
 
-              val commentString = Lexer(srcLines)
-              documentAndContentMap += ( s"$relativeDocumentPath${Utils.separator}$docName".dropRight(3) -> commentString )
-
-              fsMod.writeFileSync(documentNameAndPath, s"[Source](file:$srcFile)\n\n")
-              fsMod.appendFileSync(documentNameAndPath, commentString)
-          } catch {
-            case ex : js.JavaScriptException => println("source removed")
-          }
+                val commentString = Lexer(srcLines)
+                documentAndContentMap += ( s"$relativeDocumentPath${Utils.separator}$documentName".dropRight(3) -> commentString )
+                fsa.write(documentNameAndPath, s"[Source](file:$srcFile)\n\n" + commentString).toFuture.foreach(Unit => ())
+            } catch {
+              case ex : js.JavaScriptException => println("source removed")
+            }
+          )
         )
         applicationFileListWithExtension = applicationFileListWithExtension.drop(1)
         phaseCount = 2
@@ -193,9 +190,10 @@ object ScanSource:
         if !sourceAndDocumentLink.contains(fileName) then
           fsMod.unlinkSync(fileName)
       )
+
       sourceAndDocumentLink.clear()
-      phaseCount = -1
       documentAndContentMap.clear()
+      phaseCount = -1
 
     phaseCount += 1
 
