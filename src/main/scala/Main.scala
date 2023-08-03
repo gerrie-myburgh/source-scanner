@@ -2,14 +2,10 @@ import crosscut.{CrossCuttingConcerns, MarkerGroupList}
 import docscanner.ScanSource
 import org.scalajs.dom
 import org.scalajs.dom.window.alert
-import org.scalajs.dom.{HTMLSpanElement, MouseEvent}
-import typings.electron.Electron.ReadBookmark
-import typings.obsidian.mod.{App, Command, FileSystemAdapter, Menu, Modal, Notice, Plugin, PluginManifest, PluginSettingTab, Setting, TextComponent, ViewState}
-import typings.obsidian.obsidianStrings
-import typings.obsidian.publishMod.global.HTMLElement
+import org.scalajs.dom.MouseEvent
+import typings.obsidian.mod.{App, Command, FileSystemAdapter, Notice, Plugin, PluginManifest, PluginSettingTab, Setting, TextComponent, ViewState}
 import typings.node.fsMod
-import typings.node.fsMod.*
-import typings.std.{IArguments, Partial, global}
+import typings.node.fsMod.MakeDirectoryOptions
 import utils.Utils
 
 import scala.concurrent.Future
@@ -37,10 +33,7 @@ trait TestObsidianPluginSettings extends  js.Object:
   var applicationExtension  : String = js.native
   var sleepLength: Int    = js.native
   var groupBySize : Int = js.native
-  var storyFolder : String = js.native
-  var solutionFolder : String = js.native
-  var markerMappings : String = js.native
-  var markersPath : String = js.native
+
 
 /**
  * # class ScannerObsidianPlugin
@@ -49,20 +42,21 @@ trait TestObsidianPluginSettings extends  js.Object:
 @JSExportTopLevel("ScannerObsidianPlugin")
 class ScannerObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(app, manifest):
   private val UNDEFINED = "UNDEFINED"
-  
+
   var settings : TestObsidianPluginSettings = _
   var intervalHandle : Option[SetIntervalHandle] = None
 
-  /**
+   /**
    * ## onload()
-   * Load the plugin and setup the commands
+   * Load the plugin and setup the commands.
    * 1. Add a command to trigger the creation of solution files. Make sure all configs have been done before running the command
-   * 2. Add ribbon command to toggle scannin _ON_ or _OFF_. Make sure the scanner have been configured before starting it.
+   * 2. Add ribbon command to toggle scanning _ON_ or _OFF_. Make sure the scanner have been configured before starting it.
    */
   override def onload(): Unit =
     println("load plugin source-scanner")
     loadSettings()
 
+    val fsa = app.vault.adapter.asInstanceOf[FileSystemAdapter]
     addSettingTab(ScannerPluginSettingsTab(app, this))
 
     val sbItem = addStatusBarItem()
@@ -73,12 +67,12 @@ class ScannerObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(
         id = "solution-files-create",
         name = "Create solution files")
         .setCallback( () =>
-          if settings.documentPath.equalsIgnoreCase(UNDEFINED) ||
-            settings.storyFolder.equalsIgnoreCase(UNDEFINED) ||
-            settings.solutionFolder.equalsIgnoreCase(UNDEFINED) then
+          if settings.documentPath.equalsIgnoreCase(UNDEFINED)  then
             Notice("Please configure solution scanner portion before using it.", 0.0)
           else
-            CrossCuttingConcerns(app, settings.storyFolder, settings.solutionFolder, settings.documentPath, settings.markerMappings)
+            val (settingsStoryFolder: String, settingsSolutionFolder: String, settingsMarkerMapping: String, settingsCommentsMapping: String) = createFolders(settings, fsa)
+
+            CrossCuttingConcerns(app, settingsStoryFolder, settingsSolutionFolder, settingsCommentsMapping, settingsMarkerMapping)
         )
     )
 
@@ -87,7 +81,9 @@ class ScannerObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(
         id = "marker-files-create",
         name = "Create a file of markers")
         .setCallback(() =>
-          MarkerGroupList(app, settings.markersPath, settings.documentPath)
+          val (settingsStoryFolder: String, settingsSolutionFolder: String, settingsMarkerMapping: String, settingsCommentsMapping: String) = createFolders(settings, fsa)
+
+          MarkerGroupList(app, "settings.markersPath", settingsCommentsMapping)
         )
     )
 
@@ -104,13 +100,15 @@ class ScannerObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(
           //
           // activate scanner
           //
+          val (settingsStoryFolder: String, settingsSolutionFolder: String, settingsMarkerMapping: String, settingsCommentsMapping: String) = createFolders(settings, fsa)
+
           if intervalHandle.isEmpty then
             sbItem.setText("Comment scanner ON")
             intervalHandle = Some(
               ScanSource(app,
                 settings.applicationPath,
                 settings.applicationExtension,
-                settings.documentPath,
+                settingsCommentsMapping,
                 settings.sleepLength,
                 settings.groupBySize,
                 settings.gitBranchToScan))
@@ -144,11 +142,7 @@ class ScannerObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(
         documentPath = UNDEFINED,
         applicationExtension = UNDEFINED,
         sleepLength = 1000,
-        groupBySize = 10,
-        storyFolder = UNDEFINED,
-        solutionFolder = UNDEFINED,
-        markerMappings = "",
-        markersPath = "marker-file"
+        groupBySize = 10
       )
 
       settings = js.Object.assign(
@@ -159,6 +153,19 @@ class ScannerObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(
 
   def saveSettings() : Unit =
     saveData(settings).toFuture.foreach(Unit => ())
+
+  private def createFolders(settings: TestObsidianPluginSettings, fsa: FileSystemAdapter): (String, String, String, String) =
+    val settingsBase = s"${fsa.getBasePath()}${Utils.separator}${settings.documentPath}${Utils.separator}"
+    val settingsStoryFolder = settingsBase + "stories"
+    val settingsSolutionFolder = settingsBase + "solutions"
+    val settingsMarkerMapping = settingsBase + "marker"
+    val settingsCommentsMapping = settingsBase + "comments"
+    fsMod.mkdirSync(settingsStoryFolder, l(recursive = true).asInstanceOf[MakeDirectoryOptions])
+    fsMod.mkdirSync(settingsSolutionFolder, l(recursive = true).asInstanceOf[MakeDirectoryOptions])
+    fsMod.mkdirSync(settingsMarkerMapping, l(recursive = true).asInstanceOf[MakeDirectoryOptions])
+    fsMod.mkdirSync(settingsCommentsMapping, l(recursive = true).asInstanceOf[MakeDirectoryOptions])
+    (settingsStoryFolder, settingsSolutionFolder, settingsMarkerMapping, settingsCommentsMapping)
+
 
 /**
  * # class ScannerPluginSettingsTab
@@ -300,56 +307,6 @@ class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) ex
         )
 
       Setting(containerElement)
-        .setName("Story folder")
-        .setDesc("Location where all the user stories are kept")
-        .addText(text => text
-          .setPlaceholder("Enter the story folder location")
-          .setValue(this.plugin.settings.storyFolder)
-          .onChange(value =>
-            plugin.settings.storyFolder = value
-            plugin.saveSettings()
-          )
-        )
-
-      Setting(containerElement)
-        .setName("Solution folder")
-        .setDesc("Location where all the solutions threads are kept")
-        .addText(text => text
-          .setPlaceholder("Enter the solution folder location")
-          .setValue(this.plugin.settings.solutionFolder)
-          .onChange(value =>
-            plugin.settings.solutionFolder = value
-            plugin.saveSettings()
-          )
-        )
-
-
-
-      Setting(containerElement)
-        .setName("Mapping of markers to md file names")
-        .setDesc("Mapping definition from marker to md name")
-        .addTextArea(text => text
-          .setPlaceholder("Enter the mappings")
-          .setValue(this.plugin.settings.markerMappings)
-          .onChange(value =>
-            plugin.settings.markerMappings = value
-            plugin.saveSettings()
-          )
-        )
-
-      Setting(containerElement)
-        .setName("Marker list file name")
-        .setDesc("File where the markers list will be created into")
-        .addText(text => text
-          .setPlaceholder("Enter the markers file name")
-          .setValue(this.plugin.settings.markersPath)
-          .onChange(value =>
-            plugin.settings.markersPath = value
-            plugin.saveSettings()
-          )
-        )
-
-      Setting(containerElement)
         .setName("Check variables")
         .setDesc("Check that all variables are defined correctly")
         .addButton(button => button
@@ -397,38 +354,12 @@ class ScannerPluginSettingsTab(app : App, val plugin : ScannerObsidianPlugin) ex
     if isInvalidValidFileName(plugin.settings.documentPath, "Document Path") then
       return ()
 
-    if isDefined(plugin.settings.storyFolder, "Story Folder") then
-      return ()
-
-    if isInvalidValidFileName(plugin.settings.storyFolder, "Story Path") then
-      return ()
-
-    if isDefined(plugin.settings.solutionFolder, "Solution Folder") then
-      return ()
-
-    if isInvalidValidFileName(plugin.settings.solutionFolder, "Solution Folder") then
-      return ()
-
-    if isDefined(plugin.settings.markersPath, "Markers Path") then
-      return ()
-
-    if isInvalidValidFileName(plugin.settings.markersPath, "Markers Folder") then
-      return ()
-
     if plugin.settings.sleepLength < 500 then
       alert("Sleep length must be greater-equal to 500 milliseconds.")
       return ()
 
     if plugin.settings.groupBySize <= 0 then
       alert("Group size must be greater than 0")
-      return ()
-
-    if plugin.settings.markerMappings == null then
-      plugin.settings.markerMappings = ""
-
-    if plugin.settings.markerMappings.nonEmpty &&
-      plugin.settings.markerMappings.split("\r?\n").filter(!_.contains('=')).length > 0 then
-      alert("Marker mappings list has a mapping in it without a '=' sign.")
       return ()
 
     alert("Values seems fine.")

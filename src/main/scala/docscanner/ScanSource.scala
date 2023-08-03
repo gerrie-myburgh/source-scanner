@@ -87,7 +87,6 @@ object ScanSource:
     //
     val fsa = app.vault.adapter.asInstanceOf[FileSystemAdapter]
     val vaultPath = fsa.getBasePath()
-    fsMod.mkdirSync(documentPath, l(recursive =  true).asInstanceOf[fsMod.MakeDirectoryOptions])
 
     timers.setInterval(sleepLength)(this.run(fsa))
 
