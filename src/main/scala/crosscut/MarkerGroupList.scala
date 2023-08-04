@@ -27,7 +27,7 @@ object MarkerGroupList:
   def apply(app: mod.App, markerFile : String, documentFolder: String): Unit =
     val fsa = app.vault.adapter.asInstanceOf[FileSystemAdapter]
     val vaultPath = fsa.getBasePath()
-    val markerFileNameWithPath = s"$markerFile.md"
+    val markerFileNameWithPath = s"${markerFile}${Utils.separator}marker-table.md"
     //
     // some containers to use later on
     //

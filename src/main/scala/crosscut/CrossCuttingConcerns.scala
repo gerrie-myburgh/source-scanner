@@ -53,7 +53,9 @@ object CrossCuttingConcerns:
     // some containers to use later on
     //
     val markerToDocumentMap     = mutable.HashMap[MARKER, DOCNAME]()
+    val markerToStoryMap        = mutable.HashMap[MARKER, DOCNAME]()
     val documentToMarkerMap     = mutable.HashMap[DOCNAME, List[MARKER]]()
+    val storyToMarkerMap        = mutable.HashMap[DOCNAME, List[MARKER]]()
     val solutionToMarkerMap     = mutable.HashMap[SOLNAME, List[MARKER]]()
     val allSolutionFiles        = mutable.HashSet[MARKER]()
     //
@@ -70,9 +72,10 @@ object CrossCuttingConcerns:
 
     // -----------------------------------------------------------------------------------------------------------------
     //
-    // get all the doc files to scan
+    // get all the doc and story files files to scan
     //
     val documentFiles = Utils.listMDFilesInVault(fsa, docFolder)
+    val storyFiles = Utils.listMDFilesInVault(fsa, storyFolder)
     //
     // pick up all markers in the doc string doc file by doc file and aggregate the markers
     // before processing them
@@ -98,6 +101,24 @@ object CrossCuttingConcerns:
 
       )
     )
+    storyFiles.foreach(storyFile =>
+      allFutures += fsa.read(storyFile).toFuture.map(str =>
+
+        val markersMatch = Utils.markerRegExp.findAllMatchIn(str)
+        val markersPerStory = markersMatch.map(marker => str.substring(marker.start, marker.end).trim).toList
+
+        markerList ++= markersPerStory
+
+        val documentName = storyFile.split("/").last
+
+        markersPerStory.foreach(marker =>
+          markerToStoryMap += (marker -> documentName)
+        )
+
+        storyToMarkerMap += (documentName -> markersPerStory)
+
+      )
+    )
     //
     // wait for all work to be done
     //
@@ -110,7 +131,6 @@ object CrossCuttingConcerns:
         // sort them then
         // group by path/name.md excluding the seq number
         //
-        println("A " + documentFiles)
         val allMarkers = documentToMarkerMap
           .values
           .toList
@@ -124,10 +144,16 @@ object CrossCuttingConcerns:
         //
         allMarkers.foreach((solName, markers) =>
           //
-          // build link to story
+          // build link to story, filter stories and order
           //
-          val mdString = StringBuilder(s"""![[$storyFolder/${getStoryFileName(solName.dropRight(3), markerMappings)}#^summary]]\n""")
-          markers.foreach(marker =>
+          val storiesForMarkers = markerToStoryMap
+            .filter((marker , docName) => markers.head.startsWith(marker.split("-").dropRight(1).mkString("-")))
+
+          val mdString = StringBuilder()
+          storiesForMarkers.foreach(markerDoc =>
+            mdString ++= s"""![[$storyFolder/${getStoryFileName(solName.dropRight(3), markerMappings)}#${markerDoc._1}]]\n"""
+          )
+
             //
             // build links to document thread
             //
@@ -138,10 +164,9 @@ object CrossCuttingConcerns:
           //
           // create the folder path if required and write out text
           //
-          println("B " + solNameWithPath)
           Utils.makeDirInVault(fsa, solNameWithPath)
           fsa.write(solNameWithPath, mdString.toString())
-        )
+      )
       case Failure(ex) => println(s"Failed to complete all futures: ${ex.getMessage}")
     }
 

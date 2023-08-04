@@ -83,7 +83,7 @@ class ScannerObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(
         .setCallback(() =>
           val (settingsStoryFolder: String, settingsSolutionFolder: String, settingsMarkerMapping: String, settingsCommentsMapping: String) = createFolders(settings, fsa)
 
-          MarkerGroupList(app, "settings.markersPath", settingsCommentsMapping)
+          MarkerGroupList(app, settingsMarkerMapping, settingsCommentsMapping)
         )
     )
 
@@ -155,15 +155,26 @@ class ScannerObsidianPlugin(app: App, manifest : PluginManifest) extends Plugin(
     saveData(settings).toFuture.foreach(Unit => ())
 
   private def createFolders(settings: TestObsidianPluginSettings, fsa: FileSystemAdapter): (String, String, String, String) =
-    val settingsBase = s"${fsa.getBasePath()}${Utils.separator}${settings.documentPath}${Utils.separator}"
+
+    val settingsBase1 = s"${fsa.getBasePath()}${Utils.separator}${settings.documentPath}${Utils.separator}"
+    val settingsStoryFolder1 = settingsBase1 + "stories"
+    val settingsSolutionFolder1 = settingsBase1 + "solutions"
+    val settingsMarkerMapping1 = settingsBase1 + "marker"
+    val settingsCommentsMapping1 = settingsBase1 + "comments"
+    //
+    // create folders in vault
+    //
+    fsMod.mkdirSync(settingsStoryFolder1, l(recursive = true).asInstanceOf[MakeDirectoryOptions])
+    fsMod.mkdirSync(settingsSolutionFolder1, l(recursive = true).asInstanceOf[MakeDirectoryOptions])
+    fsMod.mkdirSync(settingsMarkerMapping1, l(recursive = true).asInstanceOf[MakeDirectoryOptions])
+    fsMod.mkdirSync(settingsCommentsMapping1, l(recursive = true).asInstanceOf[MakeDirectoryOptions])
+
+    val settingsBase = s"${settings.documentPath}${Utils.separator}"
     val settingsStoryFolder = settingsBase + "stories"
     val settingsSolutionFolder = settingsBase + "solutions"
     val settingsMarkerMapping = settingsBase + "marker"
     val settingsCommentsMapping = settingsBase + "comments"
-    fsMod.mkdirSync(settingsStoryFolder, l(recursive = true).asInstanceOf[MakeDirectoryOptions])
-    fsMod.mkdirSync(settingsSolutionFolder, l(recursive = true).asInstanceOf[MakeDirectoryOptions])
-    fsMod.mkdirSync(settingsMarkerMapping, l(recursive = true).asInstanceOf[MakeDirectoryOptions])
-    fsMod.mkdirSync(settingsCommentsMapping, l(recursive = true).asInstanceOf[MakeDirectoryOptions])
+
     (settingsStoryFolder, settingsSolutionFolder, settingsMarkerMapping, settingsCommentsMapping)
 
 
