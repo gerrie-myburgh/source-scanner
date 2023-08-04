@@ -155,7 +155,7 @@ object CrossCuttingConcerns:
           //
           val mdString = StringBuilder()
           markerToStory.foreach((marker, story) =>
-             mdString ++= s"""![[$storyFolder/${story}#^${marker}]]\n"""
+             mdString ++= s"""![[$storyFolder/${story}#${marker}]]\n"""
           )
           markers.foreach(marker =>
             //

@@ -7,8 +7,12 @@ import scala.collection.mutable
 import scalajs.js.Dynamic.global as g
 import scalajs.js
 import typings.node.fsMod
-import typings.node.fsMod.PathLike
+import typings.node.fsMod.{MakeDirectoryOptions, PathLike}
 import typings.obsidian.mod.FileSystemAdapter
+
+import js.Dynamic.literal as l
+
+import main.TestObsidianPluginSettings
 
 /**
  * # object Utils
@@ -187,4 +191,27 @@ object Utils:
         alert(s"Invalid file path $dir")
         List[String]()
     }
+
+  def createFolders(settings: TestObsidianPluginSettings, fsa: FileSystemAdapter): (String, String, String, String) =
+
+    val settingsBase1 = s"${fsa.getBasePath()}${Utils.separator}${settings.documentPath}${Utils.separator}"
+    val settingsStoryFolder1 = settingsBase1 + "stories"
+    val settingsSolutionFolder1 = settingsBase1 + "solutions"
+    val settingsMarkerMapping1 = settingsBase1 + "marker"
+    val settingsCommentsMapping1 = settingsBase1 + "comments"
+    //
+    // create folders in vault
+    //
+    fsMod.mkdirSync(settingsStoryFolder1, l(recursive = true).asInstanceOf[MakeDirectoryOptions])
+    fsMod.mkdirSync(settingsSolutionFolder1, l(recursive = true).asInstanceOf[MakeDirectoryOptions])
+    fsMod.mkdirSync(settingsMarkerMapping1, l(recursive = true).asInstanceOf[MakeDirectoryOptions])
+    fsMod.mkdirSync(settingsCommentsMapping1, l(recursive = true).asInstanceOf[MakeDirectoryOptions])
+
+    val settingsBase = s"${settings.documentPath}${Utils.separator}"
+    val settingsStoryFolder = settingsBase + "stories"
+    val settingsSolutionFolder = settingsBase + "solutions"
+    val settingsMarkerMapping = settingsBase + "marker"
+    val settingsCommentsMapping = settingsBase + "comments"
+
+    (settingsStoryFolder, settingsSolutionFolder, settingsMarkerMapping, settingsCommentsMapping)
 
