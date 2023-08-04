@@ -76,6 +76,7 @@ object CrossCuttingConcerns:
     //
     val documentFiles = Utils.listMDFilesInVault(fsa, docFolder)
     val storyFiles = Utils.listMDFilesInVault(fsa, storyFolder)
+
     //
     // pick up all markers in the doc string doc file by doc file and aggregate the markers
     // before processing them
@@ -112,7 +113,7 @@ object CrossCuttingConcerns:
         val documentName = storyFile.split("/").last
 
         markersPerStory.foreach(marker =>
-          markerToStoryMap += (marker -> documentName)
+          markerToStoryMap += (marker -> storyFile)
         )
 
         storyToMarkerMap += (documentName -> markersPerStory)
@@ -155,7 +156,7 @@ object CrossCuttingConcerns:
           //
           val mdString = StringBuilder()
           markerToStory.foreach((marker, story) =>
-             mdString ++= s"""![[$storyFolder/${story}#${marker}]]\n"""
+             mdString ++= s"""![[${markerToStoryMap(marker)}#${marker}]]\n"""
           )
           markers.foreach(marker =>
             //
@@ -168,7 +169,6 @@ object CrossCuttingConcerns:
           //
           // create the folder path if required and write out text
           //
-          println("B " + solNameWithPath)
           Utils.makeDirInVault(fsa, solNameWithPath)
           fsa.write(solNameWithPath, mdString.toString())
         )
