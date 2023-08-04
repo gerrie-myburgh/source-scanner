@@ -142,6 +142,7 @@ object CrossCuttingConcerns:
         //
         // write out
         //
+        val mdString = StringBuilder()
         allMarkers.foreach((solName, markers) =>
           //
           // build link to story, filter stories and order
@@ -149,24 +150,23 @@ object CrossCuttingConcerns:
           val storiesForMarkers = markerToStoryMap
             .filter((marker , docName) => markers.head.startsWith(marker.split("-").dropRight(1).mkString("-")))
 
-          val mdString = StringBuilder()
           storiesForMarkers.foreach(markerDoc =>
-            mdString ++= s"""![[$storyFolder/${getStoryFileName(solName.dropRight(3), markerMappings)}#${markerDoc._1}]]\n"""
+            mdString ++= s"""![[$storyFolder/${getStoryFileName(markerDoc._2.dropRight(3), markerMappings)}#${markerDoc._1}]]\n"""
           )
 
             //
             // build links to document thread
             //
             mdString ++= s"""![[${markerToDocumentMap(marker)}#${marker}]]\n"""
-          )
-          val marker = markers.head.drop(1).split("-").dropRight(1).mkString("-")
-          val solNameWithPath = getSolutionFileName(marker, s"$solName", markerMappings)
-          //
-          // create the folder path if required and write out text
-          //
-          Utils.makeDirInVault(fsa, solNameWithPath)
-          fsa.write(solNameWithPath, mdString.toString())
-      )
+        )
+        val marker = markers.head.drop(1).split("-").dropRight(1).mkString("-")
+        val solNameWithPath = getSolutionFileName(marker, s"$solName", markerMappings)
+        //
+        // create the folder path if required and write out text
+        //
+        Utils.makeDirInVault(fsa, solNameWithPath)
+        fsa.write(solNameWithPath, mdString.toString())
+
       case Failure(ex) => println(s"Failed to complete all futures: ${ex.getMessage}")
     }
 
