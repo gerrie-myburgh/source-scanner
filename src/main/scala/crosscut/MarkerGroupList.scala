@@ -50,12 +50,10 @@ object MarkerGroupList:
         val markersMatch = Utils.markerRegExp.findAllMatchIn(fileContent)
         val markersPerDocument = markersMatch.map(marker => fileContent.substring(marker.start, marker.end).trim).toList
 
-        val docName = docFile.split(Utils.separatorRegEx).last
-
         markersPerDocument.foreach(marker =>
           if !markerToDocumentMap.contains(marker) then
             markerToDocumentMap += (marker -> mutable.HashSet[String]())
-          markerToDocumentMap(marker) += docName
+          markerToDocumentMap(marker) += docFile
         )
       )
     )

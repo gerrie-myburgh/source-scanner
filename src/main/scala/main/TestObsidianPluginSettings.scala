@@ -3,9 +3,9 @@ package main
 import scala.scalajs.js
 
 //
-//bus All the variables have been parameterised and is user changeable. ^story2-00
-//bus
-//bus The variables are all updatable in _ScannerPluginSettingsTab_ ^story1-02
+//bus All the variables have been parameterised and is user changeable.
+//bus All the variabls are js variables
+//bus The variables are all updatable in _ScannerPluginSettingsTab_  ^story1-02
 //
 @js.native
 trait TestObsidianPluginSettings extends js.Object:

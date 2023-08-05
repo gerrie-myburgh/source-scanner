@@ -26,7 +26,7 @@ class ScannerObsidianPlugin(app: App, manifest: PluginManifest) extends Plugin(a
 
   /**
    * ## onload()
-   * Load the plugin and setup the commands.
+   * Load the plugin and setup the commands. ^local-ghosts-01
    * 1. Add a command to trigger the creation of solution files. Make sure all configs have been done before running the command
    * 2. Add ribbon command to toggle scanning _ON_ or _OFF_. Make sure the scanner have been configured before starting it.
    */

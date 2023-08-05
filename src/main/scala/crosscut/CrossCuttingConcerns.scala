@@ -95,7 +95,7 @@ object CrossCuttingConcerns:
         val documentName = docFile.split("/").last
 
         markersPerDocument.foreach(marker =>
-          markerToDocumentMap += (marker -> documentName)
+          markerToDocumentMap += (marker -> docFile)
         )
 
         documentToMarkerMap += (documentName -> markersPerDocument)
