@@ -4,8 +4,7 @@ package utils
  * # object Lexer
  * The source lexer scans and records all comments that looks like a block comment , allowing nested comments
  * and line comments marked as //bus up to the first eof or /r or /n. Other characters excluding \" are ignored. String
- * literals are parsed in order to prevent seeing block comments \/\*\* and \/\/ in string literals as comments.
- * ^story1-00
+ * literals are parsed in order to prevent seeing block comments \/\*\* and \/\/ in string literals as comments. ^lexer-00
  *
  */
 object Lexer:

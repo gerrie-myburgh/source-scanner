@@ -1,19 +1,13 @@
 package docscanner
 
-import docscanner.ScanSource.gitBranchName
-
-import java.util.Collections.*
 import scala.jdk.CollectionConverters.*
 import scala.scalajs.js.timers.SetIntervalHandle
 import scalajs.js.timers
 import scalajs.js
 import scalajs.js.Dynamic.global as g
 import js.Dynamic.literal as l
-import scalajs.js.JSConverters.*
-import typings.electron.File
 import typings.node.bufferMod.global.Buffer
 import typings.node.fsMod
-import typings.node.fsMod.PathLike
 import typings.node.anon.*
 import typings.obsidian.mod
 import typings.obsidian.mod.FileSystemAdapter
@@ -52,7 +46,7 @@ object ScanSource:
   /**
    * ## apply
    * At every sleep length millliseconds interval get all the business rules from the latest source file and write it to the document file. if the
-   * source file changes then delete the doc file and get newest comments from the source file
+   * source file changes then delete the doc file and get newest comments from the source file ^scanner-00
    *
    * 1. The 2 second interval must be made configurable. - Still to be implemented
    * 2. The following must be configurable
@@ -171,8 +165,12 @@ object ScanSource:
                   .asInstanceOf[String]
 
                 val commentString = Lexer(srcLines)
+                //
+                // strip out leading white spaces.
+                //
+                val comment = commentString.replaceAll("""\n[ \t]+""","\n")
                 documentAndContentMap += ( s"$relativeDocumentPath${Utils.separator}$documentName".dropRight(3) -> commentString )
-                fsa.write(documentNameAndPath, s"[Source](file:$srcFile)\n\n" + commentString).toFuture.foreach(Unit => ())
+                fsa.write(documentNameAndPath, s"[Source](file:$srcFile)\n\n" + comment).toFuture.foreach(Unit => ())
             } catch {
               case ex : js.JavaScriptException => println("source removed")
             }

@@ -31,6 +31,9 @@ class ScannerPluginSettingsTab(app: App, val plugin: ScannerObsidianPlugin) exte
 
     containerElement.empty()
 
+    //
+    //bus Make sure that the scanner is switched off before allowing user to update the settings. ^settings-01
+    //
     if plugin.intervalHandle.isDefined then
       Setting(containerElement)
         .setName("Scanner is running")

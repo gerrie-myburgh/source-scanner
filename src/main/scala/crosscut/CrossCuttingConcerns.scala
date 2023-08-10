@@ -1,12 +1,9 @@
 package crosscut
 
-import typings.node.anon.ObjectEncodingOptionsflagEncoding
 import typings.obsidian.mod
-import typings.obsidian.mod.{FileSystemAdapter, ListedFiles, TFile, TFolder}
-import typings.obsidian.publishMod.global.sleep
+import typings.obsidian.mod.FileSystemAdapter
 import utils.Utils
 
-import scala.collection.immutable.HashSet
 import scala.collection.mutable
 import scala.language.postfixOps
 import scala.scalajs.js
@@ -14,14 +11,8 @@ import scala.scalajs.js.Dynamic.literal as l
 import scala.scalajs.js.JSConverters.*
 import concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success}
 
-/**
- * # object CrossCuttingConcerns
- * Setup all the cross cutting concerns for the solution threads. These solution threads are marked by using markers
- * that is picked up from the document md files and placed in the solution folder.
- *
- */
 object CrossCuttingConcerns:
 
   private type DOCNAME   = String
@@ -30,8 +21,15 @@ object CrossCuttingConcerns:
   private type SOLNAME   = String
   private type PATHNAME  = String
 
+  /**
+   * ## object CrossCuttingConcerns
+   * Setup all the cross cutting concerns for the solution threads. These solution threads are marked by using markers
+   * that is picked up from the document md files and placed in the solution folder. ^crosscut-00
+   *
+   * When applied extract cross cutting text
+   */
   def apply(app : mod.App, storyFolder : String,  solutionFolder : String, docFolder: String, markerMapping : String) : Unit =
-    //
+    //bus
     //bus if a mapping string has been defined then get the mappings : format is 'marker'='mapping-value'
     //
     val fsa = app.vault.adapter.asInstanceOf[FileSystemAdapter]

@@ -1,10 +1,7 @@
 package crosscut
 
-import typings.node.anon.ObjectEncodingOptionsflagEncoding
-import typings.node.fsMod
 import typings.obsidian.mod
 import typings.obsidian.mod.FileSystemAdapter
-import typings.obsidian.publishMod.global.sleep
 
 import scala.scalajs.js.Dynamic.literal as l
 import utils.Utils
@@ -24,6 +21,14 @@ object MarkerGroupList:
   private type DOCNAMES = mutable.HashSet[String]
   private type MARKER   = String
 
+  /**
+   * # MarkerGroupList
+   * Create a table of marker and files that the markers appear in ^marker-00
+   *
+   * @param app
+   * @param markerFile
+   * @param documentFolder
+   */
   def apply(app: mod.App, markerFile : String, documentFolder: String): Unit =
     val fsa = app.vault.adapter.asInstanceOf[FileSystemAdapter]
     val vaultPath = fsa.getBasePath()

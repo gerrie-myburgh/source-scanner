@@ -16,6 +16,11 @@ import concurrent.ExecutionContext.Implicits.global
 /**
  * # class ScannerObsidianPlugin
  * The main class and entry point of the scanner plugin
+ * _onload_ will setup all the callback functions
+ * _onunload_ tear down the callback fuctions and shutdown the scanner iff it is running
+ * _loadSettings_ load the setting from the file system
+ * _saveSettings_ save the setting to file system
+ * _createFolders_ create folder if they do not exist ^plugin-00
  */
 @JSExportTopLevel("ScannerObsidianPlugin")
 class ScannerObsidianPlugin(app: App, manifest: PluginManifest) extends Plugin(app, manifest):
@@ -26,9 +31,10 @@ class ScannerObsidianPlugin(app: App, manifest: PluginManifest) extends Plugin(a
 
   /**
    * ## onload()
-   * Load the plugin and setup the commands. ^local-ghosts-01
-   * 1. Add a command to trigger the creation of solution files. Make sure all configs have been done before running the command
-   * 2. Add ribbon command to toggle scanning _ON_ or _OFF_. Make sure the scanner have been configured before starting it.
+   * Load the plugin and setup the commands.
+   * Add a command to trigger the creation of solution files. Make sure all configs have been done before running the command.
+   * Add command to create table of markers and the files these markers appear in.
+   * Add ribbon command to toggle scanning _ON_ or _OFF_. Make sure the scanner have been configured before starting it. ^plugin-01
    */
   override def onload(): Unit =
     println("load plugin source-scanner")
@@ -98,7 +104,7 @@ class ScannerObsidianPlugin(app: App, manifest: PluginManifest) extends Plugin(a
 
   /**
    * ## onunload()
-   * If the scanner is running then shut it down and unload the plugin
+   * If the scanner is running then shut it down and unload the plugin.
    */
   override def onunload(): Unit =
     println("unload plugin source-scanner")
@@ -129,18 +135,31 @@ class ScannerObsidianPlugin(app: App, manifest: PluginManifest) extends Plugin(a
 
     )
 
+  /**
+   * ## saveSettings
+   * Save setting to the file system.
+   */
   def saveSettings(): Unit =
     saveData(settings).toFuture.foreach(Unit => ())
 
+  /**
+   * ## createFolders
+   * recursively create the folders given the settings document path
+   * @param settings used to get the  the document folder
+   * @param fsa the obsidian file system adapter
+   * @return the names of the created folders
+   */
   private def createFolders(settings: TestObsidianPluginSettings, fsa: FileSystemAdapter): (String, String, String, String) =
-
+    //bus
+    //bus construct the name of the folders
+    //
     val settingsBase1 = s"${fsa.getBasePath()}${Utils.separator}${settings.documentPath}${Utils.separator}"
     val settingsStoryFolder1 = settingsBase1 + "stories"
     val settingsSolutionFolder1 = settingsBase1 + "solutions"
     val settingsMarkerMapping1 = settingsBase1 + "marker"
     val settingsCommentsMapping1 = settingsBase1 + "comments"
     //
-    // create folders in vault
+    //bus create folders in vault
     //
     fsMod.mkdirSync(settingsStoryFolder1, l(recursive = true).asInstanceOf[MakeDirectoryOptions])
     fsMod.mkdirSync(settingsSolutionFolder1, l(recursive = true).asInstanceOf[MakeDirectoryOptions])
