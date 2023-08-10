@@ -152,10 +152,11 @@ object CrossCuttingConcerns:
           //
           // setup die story links first
           //
-          val mdString = StringBuilder()
+          val mdString = StringBuilder("## Requirement")
           markerToStory.foreach((marker, story) =>
              mdString ++= s"""![[${markerToStoryMap(marker)}#${marker}]]\n"""
           )
+          mdString ++= "## Solution"
           markers.foreach(marker =>
             //
             // build links to document thread
