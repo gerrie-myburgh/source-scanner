@@ -10,7 +10,10 @@ package utils
 object Lexer:
   private var parseString: String = _
   private var idx = 0
+
   private val parsed = StringBuilder()
+  private val meta = StringBuilder()
+
   private var inBlockComment = 0
 
   /*
@@ -40,6 +43,23 @@ object Lexer:
     while
       val ch = getChar
       ch._1 && ch._2 != '"'
+    do
+      ()
+
+  /*
+  * get a line meta comment - htese are comments that must be parsed but not appear in the comment file
+  */
+  private def metaComment() =
+    idx += 5
+    while
+      val ch = getChar
+      val inCommentLine = ch._1 && ch._2 != '\n' && ch._2 != '\r'
+      if inCommentLine then
+        meta += ch._2
+        true
+      else
+        meta += '\n'
+        false
     do
       ()
 
@@ -96,6 +116,9 @@ object Lexer:
         case '/' if isString("/bus") => {
           lineComment()
         }
+        case '/' if isString("/meta") => {
+          metaComment()
+        }
         case '"' => {
           getString()
         }
@@ -106,16 +129,18 @@ object Lexer:
 
   /*
   * parse the input str for comments
+  * return the ( comment, meta ) strings
   */
-  def apply(str: String) =
+  def apply(str: String): ( String, String ) =
 
     parseString = str
     idx = 0
     parsed.clear()
+    meta.clear()
     inBlockComment = 0
 
     while
       scan
     do
       ()
-    parsed.toString().replaceAll("""(\r?\n)[\t ]+\*""", "\n")
+    ( parsed.toString().replaceAll("""\n[\t ]*\*[ \t]*""", "\n"), meta.toString() )

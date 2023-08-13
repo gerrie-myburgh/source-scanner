@@ -13,7 +13,8 @@ import scala.scalajs.js.timers.{SetIntervalHandle, clearInterval}
 import scala.scalajs.js.Dynamic.literal as l
 
 import concurrent.ExecutionContext.Implicits.global
-/**
+/**#ScannerObsidianPlugin
+ * uses #Utils #ScanSource #CrossCuttingConcerns #MarkerGroupList
  * # class ScannerObsidianPlugin
  * The main class and entry point of the scanner plugin
  * _onload_ will setup all the callback functions

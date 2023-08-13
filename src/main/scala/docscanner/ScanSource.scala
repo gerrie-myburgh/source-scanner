@@ -16,6 +16,7 @@ import utils.{Lexer, Utils}
 import concurrent.ExecutionContext.Implicits.global
 import scala.collection.mutable
 
+//metauses : ["Lexer", "Utils"]
 object ScanSource:
   private type DOC = String
 
@@ -43,7 +44,8 @@ object ScanSource:
   private val sourceAndDocumentLink = mutable.Set[ DOC ]() // docs that have a source
   private val documentAndContentMap = mutable.HashMap[String, String]() // all documents created with the content
 
-  /**
+  /**#ScanSource
+   * uses #Lexer #Utils
    * ## apply
    * At every sleep length millliseconds interval get all the business rules from the latest source file and write it to the document file. if the
    * source file changes then delete the doc file and get newest comments from the source file ^scanner-00
@@ -165,12 +167,16 @@ object ScanSource:
                   .asInstanceOf[String]
 
                 val commentString = Lexer(srcLines)
+                documentAndContentMap += ( s"$relativeDocumentPath${Utils.separator}$documentName".dropRight(3) -> commentString._1 )
                 //
-                // strip out leading white spaces.
+                // setup meta data in header of note
                 //
-                val comment = commentString.replaceAll("""\n[ \t]+""","\n")
-                documentAndContentMap += ( s"$relativeDocumentPath${Utils.separator}$documentName".dropRight(3) -> commentString )
-                fsa.write(documentNameAndPath, s"[Source](file:$srcFile)\n\n" + comment).toFuture.foreach(Unit => ())
+                val metaData =
+                  s"""---
+                     |${commentString._2}---
+                     |""".stripMargin
+
+                fsa.write(documentNameAndPath, s"${metaData}[Source](file:$srcFile)\n\n---\n" + commentString._1).toFuture.foreach(Unit => ())
             } catch {
               case ex : js.JavaScriptException => println("source removed")
             }

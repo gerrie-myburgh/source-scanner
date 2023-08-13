@@ -2,13 +2,12 @@ package main
 
 import scala.scalajs.js
 
-//
-//bus All the variables have been parameterised and is user changeable.
-//bus All the variabls are js variables
-//bus The variables are all updatable in _ScannerPluginSettingsTab_  ^settings-00
-//
-
 /**
+ * # TestObsidianPluginSettings
+ * All the variables have been parameterised and is user changeable
+ * All the variables are js variables
+ * The variables are all updatable in _ScannerPluginSettingsTab_  ^settings-00
+ *
  * ### Application Path
  * The location on the file system of the source code.
  * ### Git Branch To Scan
