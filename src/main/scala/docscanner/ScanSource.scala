@@ -65,7 +65,13 @@ object ScanSource:
    * @param _sleepLength
    * @return
    */
-  def apply(app : mod.App, _appPath : String, _ext : String, _docPath : String, _sleepLength : Int, _groupBySize : Int, _gitBranchName : String): SetIntervalHandle =
+  def apply(app : mod.App,
+            _appPath : String,
+            _ext : String,
+            _docPath : String,
+            _sleepLength : Int,
+            _groupBySize : Int,
+            _gitBranchName : String) : SetIntervalHandle =
     //
     // initialization
     //
