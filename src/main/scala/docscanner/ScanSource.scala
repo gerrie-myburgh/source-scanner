@@ -16,7 +16,7 @@ import utils.{Lexer, Utils}
 import concurrent.ExecutionContext.Implicits.global
 import scala.collection.mutable
 
-//metauses : ["Lexer", "Utils"]
+//metauses: ["Lexer", "Utils"]
 object ScanSource:
   private type DOC = String
 
