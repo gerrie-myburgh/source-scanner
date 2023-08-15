@@ -1,12 +1,9 @@
 package crosscut
 
-import typings.node.anon.ObjectEncodingOptionsflagEncoding
 import typings.obsidian.mod
-import typings.obsidian.mod.{FileSystemAdapter, ListedFiles, TFile, TFolder}
-import typings.obsidian.publishMod.global.sleep
+import typings.obsidian.mod.FileSystemAdapter
 import utils.Utils
 
-import scala.collection.immutable.HashSet
 import scala.collection.mutable
 import scala.language.postfixOps
 import scala.scalajs.js
@@ -14,14 +11,8 @@ import scala.scalajs.js.Dynamic.literal as l
 import scala.scalajs.js.JSConverters.*
 import concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.{Failure, Success, Try}
+import scala.util.{Failure, Success}
 
-/**
- * # object CrossCuttingConcerns
- * Setup all the cross cutting concerns for the solution threads. These solution threads are marked by using markers
- * that is picked up from the document md files and placed in the solution folder.
- *
- */
 object CrossCuttingConcerns:
 
   private type DOCNAME   = String
@@ -30,8 +21,15 @@ object CrossCuttingConcerns:
   private type SOLNAME   = String
   private type PATHNAME  = String
 
+  /**
+   * ## object CrossCuttingConcerns
+   * Setup all the cross cutting concerns for the solution threads. These solution threads are marked by using markers
+   * that is picked up from the document md files and placed in the solution folder. ^crosscut-00
+   *
+   * When applied extract cross cutting text
+   */
   def apply(app : mod.App, storyFolder : String,  solutionFolder : String, docFolder: String, markerMapping : String) : Unit =
-    //
+    //bus
     //bus if a mapping string has been defined then get the mappings : format is 'marker'='mapping-value'
     //
     val fsa = app.vault.adapter.asInstanceOf[FileSystemAdapter]
@@ -53,7 +51,9 @@ object CrossCuttingConcerns:
     // some containers to use later on
     //
     val markerToDocumentMap     = mutable.HashMap[MARKER, DOCNAME]()
+    val markerToStoryMap        = mutable.HashMap[MARKER, DOCNAME]()
     val documentToMarkerMap     = mutable.HashMap[DOCNAME, List[MARKER]]()
+    val storyToMarkerMap        = mutable.HashMap[DOCNAME, List[MARKER]]()
     val solutionToMarkerMap     = mutable.HashMap[SOLNAME, List[MARKER]]()
     val allSolutionFiles        = mutable.HashSet[MARKER]()
     //
@@ -70,9 +70,11 @@ object CrossCuttingConcerns:
 
     // -----------------------------------------------------------------------------------------------------------------
     //
-    // get all the doc files to scan
+    // get all the doc and story files files to scan
     //
     val documentFiles = Utils.listMDFilesInVault(fsa, docFolder)
+    val storyFiles = Utils.listMDFilesInVault(fsa, storyFolder)
+
     //
     // pick up all markers in the doc string doc file by doc file and aggregate the markers
     // before processing them
@@ -91,10 +93,28 @@ object CrossCuttingConcerns:
         val documentName = docFile.split("/").last
 
         markersPerDocument.foreach(marker =>
-          markerToDocumentMap += (marker -> documentName)
+          markerToDocumentMap += (marker -> docFile)
         )
 
         documentToMarkerMap += (documentName -> markersPerDocument)
+
+      )
+    )
+    storyFiles.foreach(storyFile =>
+      allFutures += fsa.read(storyFile).toFuture.map(str =>
+
+        val markersMatch = Utils.markerRegExp.findAllMatchIn(str)
+        val markersPerStory = markersMatch.map(marker => str.substring(marker.start, marker.end).trim).toList
+
+        markerList ++= markersPerStory
+
+        val documentName = storyFile.split("/").last
+
+        markersPerStory.foreach(marker =>
+          markerToStoryMap += (marker -> storyFile)
+        )
+
+        storyToMarkerMap += (documentName -> markersPerStory)
 
       )
     )
@@ -110,7 +130,6 @@ object CrossCuttingConcerns:
         // sort them then
         // group by path/name.md excluding the seq number
         //
-        println("A " + documentFiles)
         val allMarkers = documentToMarkerMap
           .values
           .toList
@@ -122,11 +141,22 @@ object CrossCuttingConcerns:
         //
         // write out
         //
+        val mdString = StringBuilder()
         allMarkers.foreach((solName, markers) =>
           //
-          // build link to story
+          // build link to story, filter the story markers as well
           //
-          val mdString = StringBuilder(s"""![[$storyFolder/${getStoryFileName(solName.dropRight(3), markerMappings)}#^summary]]\n""")
+          val markerToStory = markerToStoryMap.filter((marker, Story) =>
+            markers.head.startsWith(marker.split("-").dropRight(1).mkString("-"))
+          )
+          //
+          // setup die story links first
+          //
+          val mdString = StringBuilder("## Requirement")
+          markerToStory.foreach((marker, story) =>
+             mdString ++= s"""![[${markerToStoryMap(marker)}#${marker}]]\n"""
+          )
+          mdString ++= "## Solution"
           markers.foreach(marker =>
             //
             // build links to document thread
@@ -138,7 +168,6 @@ object CrossCuttingConcerns:
           //
           // create the folder path if required and write out text
           //
-          println("B " + solNameWithPath)
           Utils.makeDirInVault(fsa, solNameWithPath)
           fsa.write(solNameWithPath, mdString.toString())
         )
