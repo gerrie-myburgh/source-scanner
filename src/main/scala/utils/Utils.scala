@@ -226,7 +226,7 @@ object Utils:
     fsMod.mkdirSync(settingsMarkerMapping1, l(recursive = true).asInstanceOf[MakeDirectoryOptions])
     fsMod.mkdirSync(settingsCommentsMapping1, l(recursive = true).asInstanceOf[MakeDirectoryOptions])
 
-    val settingsBase = s"${settings.documentPath}${Utils.separator}"
+    val settingsBase = s"${settings.documentPath}/"
     val settingsStoryFolder = settingsBase + "stories"
     val settingsSolutionFolder = settingsBase + "solutions"
     val settingsMarkerMapping = settingsBase + "marker"

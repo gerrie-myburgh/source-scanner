@@ -42,7 +42,6 @@ object ScanSource:
   private var documentFileListWithExtension : List[String] = _
 
   private val sourceAndDocumentLink = mutable.Set[ DOC ]() // docs that have a source
-  private val documentAndContentMap = mutable.HashMap[String, String]() // all documents created with the content
 
   /**#ScanSource
    * uses #Lexer #Utils
@@ -173,7 +172,6 @@ object ScanSource:
                   .asInstanceOf[String]
 
                 val commentString = Lexer(srcLines)
-                documentAndContentMap += ( s"$relativeDocumentPath${Utils.separator}$documentName".dropRight(3) -> commentString._1 )
                 //
                 // setup meta data in header of note
                 //
@@ -201,7 +199,6 @@ object ScanSource:
       )
 
       sourceAndDocumentLink.clear()
-      documentAndContentMap.clear()
       phaseCount = -1
 
     phaseCount += 1
