@@ -1,7 +1,7 @@
 {
 "id": "source-scanner",
 "name": "Source Scanner",
-"version": "0.1.0",
+"version": "0.1.1",
 "minAppVersion": "0.13.11",
 "description": "Scanner that extracts comments from source and places it in md files",
 "author": "gerrie myburgh",
