@@ -50,8 +50,8 @@ object CrossCuttingConcerns:
     //
     // some containers to use later on
     //
-    val markerToDocumentMap     = mutable.HashMap[MARKER, DOCNAME]()
-    val markerToStoryMap        = mutable.HashMap[MARKER, DOCNAME]()
+    val markerToDocumentMap     = mutable.SortedMap[MARKER, DOCNAME]()
+    val markerToStoryMap        = mutable.SortedMap[MARKER, DOCNAME]()
     val documentToMarkerMap     = mutable.HashMap[DOCNAME, List[MARKER]]()
     val storyToMarkerMap        = mutable.HashMap[DOCNAME, List[MARKER]]()
     val solutionToMarkerMap     = mutable.HashMap[SOLNAME, List[MARKER]]()
@@ -152,11 +152,11 @@ object CrossCuttingConcerns:
           //
           // setup die story links first
           //
-          val mdString = StringBuilder("## Requirement")
+          val mdString = StringBuilder("## Requirement\n")
           markerToStory.foreach((marker, story) =>
              mdString ++= s"""![[${markerToStoryMap(marker)}#${marker}]]\n"""
           )
-          mdString ++= "## Solution"
+          mdString ++= "## Solution\n"
           markers.foreach(marker =>
             //
             // build links to document thread
