@@ -34,9 +34,8 @@ git branch --show-current > current-branch.txt
 
 ## Comments types scanned for in source code
 
-The following type of comments are picked from source files by the plugin and written out markdown  notes ```/** ... */``` and ```//bus ...```. 
-The idea is to pick up only comments that relate to the solving of business rules. The other types of comments, ```/* ... */``` and ```// ....``` 
-are ignored as they are deemed to be comments that explain some of other technical point in the implementation.
+The following type of comments are picked from source files by the plugin and written out markdown  notes ```/** ... */``` and ```//bus ...``` and ```//meta ...``` The idea is to pick up only comments that relate to the solving of business rules. The other types of comments, ```/* ... */``` and ```// ....``` 
+are ignored as they are deemed to be comments that explain some of other technical point in the implementation. ```//meta ...``` Is used to keep meta information that is placed in the meta portion of the note.
 
 An example of a block comment that is picked is the following
 
