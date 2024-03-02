@@ -8,7 +8,7 @@ lazy val root = project
     .in(file("."))
     .settings(
         name := "my-scala-js",
-        version := "0.1.1-SNAPSHOT",
+        version := "0.1.2-SNAPSHOT",
         webpackConfigFile  := Some(baseDirectory.value / "dev.webpack.config.cjs"),
         scalaVersion := scala3Version,
         scalaJSUseMainModuleInitializer := true,
