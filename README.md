@@ -113,15 +113,7 @@ This should make is easier to update markers in the source code as required. An 
 
  *  Application path : The file path to the application files to be scanned. 
  *  Git branch to scan : The git branch to scan for. It this is not the current branch booked out then the scanner will not scan these booked out files for comments.
- *  Document path : The path where the comment notes are to be placed in.
+ *  Document path : The path where the notes are to be placed in.
  *  Application extension  : The type of extension the source files have, e.g. for java, .java and so on.
  *  SleepLength : The duration between scanning the source files in milliseconds. 
  *  Group by size : When the source files are scanned then this is done in batches. Group by size is the batch size.
- *  Story folder : The folder where the user story notes are kept in
- *  Solution folder : The folder where the solution notes are generated into
- *  Marker mappings : If the user does not want to use the default story name for the defined marker then he can define the mapping between the marker to the new note name
- *  Markers path : Path and name of the marker table note. 
-
-An example of a values that is correct in settings.
-
-![img.png](img.png)

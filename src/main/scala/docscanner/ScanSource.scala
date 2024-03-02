@@ -1,19 +1,13 @@
 package docscanner
 
-import docscanner.ScanSource.gitBranchName
-
-import java.util.Collections.*
 import scala.jdk.CollectionConverters.*
 import scala.scalajs.js.timers.SetIntervalHandle
 import scalajs.js.timers
 import scalajs.js
 import scalajs.js.Dynamic.global as g
 import js.Dynamic.literal as l
-import scalajs.js.JSConverters.*
-import typings.electron.File
 import typings.node.bufferMod.global.Buffer
 import typings.node.fsMod
-import typings.node.fsMod.PathLike
 import typings.node.anon.*
 import typings.obsidian.mod
 import typings.obsidian.mod.FileSystemAdapter
@@ -22,6 +16,7 @@ import utils.{Lexer, Utils}
 import concurrent.ExecutionContext.Implicits.global
 import scala.collection.mutable
 
+//metauses: ["Lexer", "Utils"]
 object ScanSource:
   private type DOC = String
 
@@ -47,12 +42,12 @@ object ScanSource:
   private var documentFileListWithExtension : List[String] = _
 
   private val sourceAndDocumentLink = mutable.Set[ DOC ]() // docs that have a source
-  private val documentAndContentMap = mutable.HashMap[String, String]() // all documents created with the content
 
-  /**
+  /**#ScanSource
+   * uses #Lexer #Utils
    * ## apply
    * At every sleep length millliseconds interval get all the business rules from the latest source file and write it to the document file. if the
-   * source file changes then delete the doc file and get newest comments from the source file
+   * source file changes then delete the doc file and get newest comments from the source file ^scanner-00
    *
    * 1. The 2 second interval must be made configurable. - Still to be implemented
    * 2. The following must be configurable
@@ -69,7 +64,13 @@ object ScanSource:
    * @param _sleepLength
    * @return
    */
-  def apply(app : mod.App, _appPath : String, _ext : String, _docPath : String, _sleepLength : Int, _groupBySize : Int, _gitBranchName : String): SetIntervalHandle =
+  def apply(app : mod.App,
+            _appPath : String,
+            _ext : String,
+            _docPath : String,
+            _sleepLength : Int,
+            _groupBySize : Int,
+            _gitBranchName : String) : SetIntervalHandle =
     //
     // initialization
     //
@@ -87,7 +88,6 @@ object ScanSource:
     //
     val fsa = app.vault.adapter.asInstanceOf[FileSystemAdapter]
     val vaultPath = fsa.getBasePath()
-    fsMod.mkdirSync(documentPath, l(recursive =  true).asInstanceOf[fsMod.MakeDirectoryOptions])
 
     timers.setInterval(sleepLength)(this.run(fsa))
 
@@ -172,8 +172,15 @@ object ScanSource:
                   .asInstanceOf[String]
 
                 val commentString = Lexer(srcLines)
-                documentAndContentMap += ( s"$relativeDocumentPath${Utils.separator}$documentName".dropRight(3) -> commentString )
-                fsa.write(documentNameAndPath, s"[Source](file:$srcFile)\n\n" + commentString).toFuture.foreach(Unit => ())
+                //
+                // setup meta data in header of note
+                //
+                val metaData =
+                  s"""---
+                     |${commentString._2}---
+                     |""".stripMargin
+
+                fsa.write(documentNameAndPath, s"${metaData}[Source](file:$srcFile)\n\n---\n" + commentString._1).toFuture.foreach(Unit => ())
             } catch {
               case ex : js.JavaScriptException => println("source removed")
             }
@@ -192,7 +199,6 @@ object ScanSource:
       )
 
       sourceAndDocumentLink.clear()
-      documentAndContentMap.clear()
       phaseCount = -1
 
     phaseCount += 1
