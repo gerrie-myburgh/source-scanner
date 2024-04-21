@@ -259,7 +259,7 @@ pub fn scan_for_comments(str: JsString) -> JsString {
     let mut start_end_delim = [
         &StartEndTuple(&"/**", &"*/", &[], &ConsumeAction::Take),
         &StartEndTuple(&"///", &"\n", &[], &ConsumeAction::Take),
-        &StartEndTuple(&"//", &"\n", &[], &ConsumeAction::Take),
+        &StartEndTuple(&"//b", &"\n", &[], &ConsumeAction::Take),
         &StartEndTuple(&"\"\"\"", &"\"\"\"", &[], &ConsumeAction::Ignore),
         &StartEndTuple(&"\"", &"\"", &[("\\\"", "\"")], &ConsumeAction::Ignore),
     ];
