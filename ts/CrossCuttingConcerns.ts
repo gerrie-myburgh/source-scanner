@@ -185,7 +185,7 @@ export class CrossCuttingConcerns {
                                     mdString = mdString + `![[${markerToStoryMap.get(marker)}#${marker.trim()}]]\n`;
                                 }
                             });
-                            
+
                             const uniqueMakers = Array.from(new Set(markers));
                             uniqueMakers.forEach((marker, story) => {
                                 mdString = mdString + '## Implimentation Solution\n';
@@ -208,14 +208,11 @@ export class CrossCuttingConcerns {
                                 }
                             });
 
-
-                            const marker = this.dropRightAndMkString(markers[0].substring(1).split("-"), 1, '-');
-                            const solNameWithPath = this.getSolutionFileName(solName);
                             //
                             // create the folder path if required and write out text
                             //
-                            this.utils.makeDirInVault(solNameWithPath);
-                            this.fsa.write(solNameWithPath, mdString);
+                            this.utils.makeDirInVault(solName);
+                            this.fsa.write(solName, mdString);
                         })
                     })
             });
@@ -244,14 +241,24 @@ export class CrossCuttingConcerns {
     }
 
     /**
-     *
-     * @param marker 
+     * split solName in groups of 2 joined by /
      * @param solName solution name
      * @param mapping markerSet
      */
     private getSolutionFileName(solName: string): string {
-        const fileName = solName.split(this.utils.toVaultTypeSeperator()).join("/")
-        return `/${fileName}`
+        const fileNameParts = solName.split("-")
+        var fileName: string[] = [];
+        var i = 0;
+        for (i = 0; i < fileNameParts.length; i++) {
+            if (i % 2 == 0) {
+                if (i == fileNameParts.length - 2) {
+                    fileName.push(fileNameParts[i]);
+                } else {
+                    fileName.push(fileNameParts[i] + "-" + fileNameParts[i + 1]);
+                }
+            }
+        }
+        return `/${fileName.join("/")}`
     }
 
     /**
@@ -270,16 +277,10 @@ export class CrossCuttingConcerns {
      * @param marker in document string
      * @return the name of the path and file name.md
      */
-    private solutionDocNameFromMarker(marker: String): string {
-        const markerList = marker.substring(1).split("-");
-        var docName = "";
-        if (markerList.length == 6) {
-            docName = this.dropRightAndMkString(markerList, 3, '/');
-        } else {
-            docName = this.dropRightAndMkString(markerList, 1, '/');
-        }
+    private solutionDocNameFromMarker(marker: string): string {
+        const docName = this.getSolutionFileName(marker.replace("^", ""));
         const solutionName = `${docName}.md`;
-        return `${this.docFolders.settingsSolutionFolder}${'/'}${solutionName}`;
+        return `/${this.docFolders.settingsSolutionFolder}${solutionName}`;
     }
 
     /**
