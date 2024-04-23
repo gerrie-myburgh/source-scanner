@@ -337,7 +337,7 @@ export class CrossCuttingConcerns {
      * @returns 
      */
     private isTestMarker(marker: string): boolean {
-        return marker.split("-").length == 6
+        return marker.split("-").length == 8
     }
 
 }
