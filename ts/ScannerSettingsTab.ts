@@ -89,7 +89,7 @@ export class ScannerSettingsTab extends PluginSettingTab {
                 
             new Setting(containerEl)
                 .setName("Application type")
-                .setDesc("Type of application (.java .js etc)")
+                .setDesc("Type of application")
                 .addDropdown(dropDown => 
                         dropDown
                             .addOption('.java', 'java')
@@ -99,7 +99,7 @@ export class ScannerSettingsTab extends PluginSettingTab {
                             .addOption('.cpp', 'cpp')
                             .addOption('.cxx', 'cxx')
                             .addOption('.ts', 'typescript')
-                            .setValue('.java')
+                            .setValue(this.plugin.settings.applicationExtension)
                             .onChange(async (value) =>	{
                                 this.plugin.settings.applicationExtension = value;
                                 await this.plugin.saveSettings();
