@@ -93,6 +93,12 @@ export class ScannerSettingsTab extends PluginSettingTab {
                 .addDropdown(dropDown => 
                         dropDown
                             .addOption('.java', 'java')
+                            .addOption('.rs', 'rust')
+                            .addOption('.c', 'c')
+                            .addOption('.c++', 'c++')
+                            .addOption('.cpp', 'cpp')
+                            .addOption('.cxx', 'cxx')
+                            .addOption('.ts', 'typescript')
                             .setValue('.java')
                             .onChange(async (value) =>	{
                                 this.plugin.settings.applicationExtension = value;
