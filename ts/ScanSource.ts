@@ -182,7 +182,21 @@ export class ScanSource {
             // 
             if (createdFile || docStat.mtimeMs < srcStat.mtimeMs) {
                 const srcLines = readFileSync(srcFile, { encoding: 'utf8', flag: 'r' });
-                var allComments = this.codeScanner(srcLines).replaceAll(/\n\s+\*/g,"\n");
+                var allComments;
+                var comments = "NONE";
+                try {
+                    comments = this.codeScanner(srcLines);
+                    if (comments != undefined) {
+                        allComments = comments.replaceAll(/\n\s+\*/g, "\n")
+                    }
+                } catch (exception) {
+                    console.log("Error in scan for file " + srcFile); 
+                    const headerComment = `[Source](file://${srcFile})\n\n---\n`;
+                    this.fsa.write(documentNameAndPath, headerComment + comments);
+                }
+                if (allComments == "unpaired surrogates") {
+                    console.log("Error in scan for file " + srcFile); 
+                }
                 const headerComment = `[Source](file://${srcFile})\n\n---\n`;
                 this.fsa.write(documentNameAndPath, headerComment + allComments);
             }
