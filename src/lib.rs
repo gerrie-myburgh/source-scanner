@@ -155,7 +155,7 @@ impl Lex<'_> {
         if *consume_action == ConsumeAction::Take {
             str_parts.push(
                 self.substring(start_of_what_i_want.unwrap(), ch.0)
-                    .unwrap_or_else(|| "NO VALUE".to_string()),
+                    .unwrap_or_else(|| "".to_string()),
             );
             result.push(str_parts.join("").to_string());
         }
@@ -227,7 +227,6 @@ impl Lex<'_> {
                 let start_string = self.substring(ch.0, max_start_length.unwrap());
                 for StartEndTuple(st, en, esc_seq, consume_action) in start_end_tuple {
                     if let Some(_) = self.does_start_string_start_with_s(&start_string, st) {
-
                         // I have the start , go to the end of the start
                         //
                         let mut character: Option<(usize, char)> = None;
@@ -242,18 +241,15 @@ impl Lex<'_> {
                         let mut str_parts = Vec::<String>::new();
 
                         loop {
+                            if character.is_none() {
+                                break;
+                            }
                             let chars_to_be_checked = en.len();
                             let mut chars_checked = 0usize;
 
                             let mut en_it = en.chars();
 
                             loop {
-                                prev_char = character;
-                                character = it.next();
-                                if character.is_none() {
-                                    break;
-                                }
-
                                 if character.unwrap().1 == en_it.nth(0).unwrap() {
                                     if chars_checked == 0 {
                                         start_of_end_char = character;
@@ -265,6 +261,12 @@ impl Lex<'_> {
                                 }
 
                                 if chars_checked == chars_to_be_checked {
+                                    break;
+                                }
+
+                                prev_char = character;
+                                character = it.next();
+                                if character.is_none() {
                                     break;
                                 }
                             }
@@ -284,7 +286,11 @@ impl Lex<'_> {
                                     self.get_sub_string(
                                         &mut str_parts,
                                         start_of_what_i_want,
-                                        (start_of_end_char.unwrap().0 - start_of_what_i_want.unwrap(), ' '),
+                                        (
+                                            start_of_end_char.unwrap().0
+                                                - start_of_what_i_want.unwrap(),
+                                            ' ',
+                                        ),
                                         &mut result,
                                         &en,
                                         &mut it,
@@ -343,5 +349,7 @@ pub fn scan_for_comments(str: JsString) -> JsString {
         &StartEndTuple(&"\"", &"\"", &[("\\\"", "\"")], &ConsumeAction::Ignore),
     ];
 
-    lexer.get_substrings_between_two_strings(&mut start_end_delim).into()
+    lexer
+        .get_substrings_between_two_strings(&mut start_end_delim)
+        .into()
 }
