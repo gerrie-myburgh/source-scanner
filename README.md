@@ -1,6 +1,6 @@
 # Source code scanner
 
-Extracts comments from java source code into notes. The plugin will only work for the Obsidian desktop application and java applications.
+Extracts comments from some source code into notes. The plugin will only work for the Obsidian desktop application and some applications.
 
 ## Problem that the plugin tries to address
 
