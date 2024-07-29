@@ -1,7 +1,7 @@
 {
 	"id": "source-scanner",
 	"name": "Source Scanner",
-	"version": "1.0.0-beta.5",
+	"version": "1.0.0-beta.6",
 	"minAppVersion": "0.15.0",
 	"description": "Scan java source and test code for comments then place it in md files.",
 	"author": "Gerrie Myburgh",
