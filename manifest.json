@@ -5,6 +5,6 @@
 	"minAppVersion": "0.15.0",
 	"description": "Scan java source and test code for comments then place it in md files.",
 	"author": "Gerrie Myburgh",
-	"repo": "https://github.com/gerrie-myburgh/source-scanner",
+	"repo": "gerrie-myburgh/source-scanner",
 	"isDesktopOnly": false
 }
