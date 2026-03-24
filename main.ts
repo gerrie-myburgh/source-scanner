@@ -1,14 +1,45 @@
-import { App, Editor, MarkdownView, Modal, PluginManifest, Plugin, Notice } from 'obsidian';
-import { ScannerSettingsTab } from "./ts/ScannerSettingsTab";
+import { 
+	App, 
+	Editor, 
+	FileSystemAdapter,
+	MarkdownView, 
+	Modal, 
+	PluginManifest, 
+	Plugin, 
+	PluginSettingTab,
+	Notice } from 'obsidian';
+
+import { ScannerSettingsTab } from "./ts/SettingsTab";
+import { CodeScannerTab } from './ts/SettingsTab';
 import { ScanSource } from './ts/ScanSource'
 import { CrossCuttingConcerns } from './ts/CrossCuttingConcerns';
 import { MarkerGroupList } from './ts/MarkerGroupList';
 import { Utils } from './ts/Utils'
+import { spawn, spawnSync } from "child_process";
+import { existsSync } from "fs";
 
 import * as lexer_plugin from "./pkg/obsidian_rust_plugin.js";
 import * as lexer_wasm from './pkg/obsidian_rust_plugin_bg.wasm';
 
 import * as fs from 'fs'
+
+interface CodeScannerSettings {
+	dir: string;
+	work: string;
+	start: string;
+	path: string;
+	extension: string;
+	destExtension: string;
+}
+
+const CODE_SCANNER_DEFAULT_SETTINGS: CodeScannerSettings = {
+	dir: "UNKNOWN",
+	work: "UNKNOWN",
+	start: "UNKNOWN",
+	path: "UNKNOWN",
+	extension: "UNKNOWN",
+	destExtension: "UNKNOWN",
+};
 
 interface MyPluginSettings {
 	documentPath: string;
@@ -28,8 +59,11 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
 	groupBySize: 0.0,
 }
 
+const VERSION = "1.0.1";
+
 export default class SourceScanner extends Plugin {
 	app: App;
+	codeScannerSettings: CodeScannerSettings;
 	settings: MyPluginSettings;
 	intervalHandle: any = undefined;
 	scanSource = new ScanSource();
@@ -39,6 +73,195 @@ export default class SourceScanner extends Plugin {
 		super(app, manifest);
 		this.app = app;
 		this.utils = new Utils(app);
+	}
+
+		private getPlatformPathAndName(): [boolean, string?, string?] {
+		const platform = process.platform; // e.g., 'darwin', 'win32', 'linux'
+		const adapter = this.app.vault.adapter;
+
+		let executablePath = "";
+		let workFolder = "";
+		if (adapter instanceof FileSystemAdapter) {
+			if (platform === "win32") {
+				const basePath =
+					adapter.getBasePath() +
+					"\\" +
+					this.app.vault.configDir +
+					"\\plugins\\code-scanner-ver2";
+				executablePath = basePath + "\\get-comments.exe";
+				if (this.codeScannerSettings.work.startsWith("\\")) {
+					workFolder = this.codeScannerSettings.work;
+				} else {
+					workFolder = "\\" + this.codeScannerSettings.work;
+				}
+			} else if (platform === "darwin") {
+				const basePath =
+					adapter.getBasePath() +
+					"/" +
+					this.app.vault.configDir +
+					"/plugins/code-scanner-ver2";
+				executablePath = basePath + "/get-comments-macos";
+				if (this.codeScannerSettings.work.startsWith("/")) {
+					workFolder = this.codeScannerSettings.work;
+				} else {
+					workFolder = "/" + this.codeScannerSettings.work;
+				}
+			} else if (platform === "linux") {
+				const basePath =
+					adapter.getBasePath() +
+					"/" +
+					this.app.vault.configDir +
+					"/plugins/code-scanner-ver2";
+				executablePath = basePath + "/get-comments-linux";
+				if (this.codeScannerSettings.work.startsWith("/")) {
+					workFolder = this.codeScannerSettings.work;
+				} else {
+					workFolder = "/" + this.codeScannerSettings.work;
+				}
+			} else {
+				new InfoModal(
+					this.app,
+					"Unsupported Platform",
+					`Unsupported platform: ${platform}`,
+				).open();
+				return [false];
+			}
+			return [true, executablePath, workFolder];
+		}
+		return [false];
+	}
+
+	private async checkCLIVersion(): Promise<void> {
+		const parameters = ["-ver"];
+		const path = this.getPlatformPathAndName();
+
+		if (path[0]) {
+			const executablePath = path[1] as string;
+			// Check if executable exists
+			if (!existsSync(executablePath)) {
+				new InfoModal(
+					this.app,
+					"Executable Not Found",
+					`Executable not found: ${executablePath}`,
+				).open();
+				console.error(`Executable not found: ${executablePath}`);
+			}
+
+			// Now spawn the process
+			const result = spawnSync(executablePath, parameters);
+
+			const version = String(result.stdout).trim();
+			if (version != VERSION) {
+				const modal = new InfoModal(
+					this.app,
+					"CLI Version mismatch - plugin version is [" +
+						VERSION +
+						"]",
+					`CLI Version: ` + version,
+				);
+				modal.open();
+				await modal.getResult();
+				throw new Error("Version mismatch");
+			}
+		}
+	}
+
+	private async triggerScan() {
+		if (this.codeScannerSettings.dir == "UNKNOWN") {
+			new InfoModal(
+				this.app,
+				"Configuration Required",
+				"Please configure plugin before using",
+			).open();
+			return;
+		}
+		const adapter = this.app.vault.adapter;
+		const parameters = [
+			"-dir",
+			this.codeScannerSettings.dir,
+			"-start",
+			this.codeScannerSettings.start,
+			"-path",
+			this.codeScannerSettings.path,
+			"-ext",
+			this.codeScannerSettings.extension,
+			"-dest",
+			this.codeScannerSettings.destExtension,
+		];
+
+		await this.checkCLIVersion()
+			.then((data) => {
+				const path = this.getPlatformPathAndName();
+
+				if (path[0]) {
+					const executablePath = path[1] as string;
+					const workFolder = path[2] as string;
+					// Check if executable exists
+					if (!existsSync(executablePath)) {
+						new InfoModal(
+							this.app,
+							"Executable Not Found",
+							`Executable not found: ${executablePath}`,
+						).open();
+						console.error(
+							`Executable not found: ${executablePath}`,
+						);
+						return;
+					}
+
+					if (adapter instanceof FileSystemAdapter) {
+						// Now spawn the process
+						const workPath = adapter.getBasePath() + workFolder;
+						const child = spawn(
+							executablePath,
+							parameters.concat(["-work", workPath]),
+						);
+
+						child.stdout.on("data", (data) => {
+							new InfoModal(
+								this.app,
+								"Process Error",
+								`Error: ${data}`,
+							).open();
+						});
+
+						child.stderr.on("data", (data) => {
+							console.error(`stderr: ${data}`);
+							new InfoModal(
+								this.app,
+								"Process Error",
+								`Error: ${data}`,
+							).open();
+						});
+
+						child.on("error", (error) => {
+							console.error(`Failed to start process: ${error}`);
+							new InfoModal(
+								this.app,
+								"Process Failed",
+								`Failed to start process: ${error.message}`,
+							).open();
+						});
+
+						child.on("close", (code) => {
+							if (code === 0) {
+								new InfoModal(
+									this.app,
+									"Scan Complete",
+									"Scan completed successfully",
+								).open();
+							} else {
+								new InfoModal(
+									this.app,
+									"Scan Failed",
+									`Scan failed with exit code ${code}`,
+								).open();
+							}
+						});
+					}
+				}
+			})
+			.catch((err) => console.warn("scan code"));
 	}
 
 	async onload() {
@@ -172,5 +395,52 @@ class SampleModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 	}
+}
+class InfoModal extends Modal {
+	private resolvePromise: (value: string | null) => void;
+	private promise: Promise<string | null>;
+
+	constructor(
+		app: App,
+		public title: string,
+		public message: string,
+	) {
+		super(app);
+		// Create a promise that resolves when modal closes
+		this.promise = new Promise((resolve) => {
+			this.resolvePromise = resolve;
+		});
+	}
+
+	onOpen() {
+		const { contentEl } = this;
+
+		// Add title
+		contentEl.createEl("h2", { text: this.title });
+
+		// Add message
+		contentEl.createEl("p", { text: this.message });
+
+		// Add OK button
+		const buttonContainer = contentEl.createDiv({
+			cls: "modal-button-container",
+		});
+		const okButton = buttonContainer.createEl("button", { text: "OK" });
+		okButton.addEventListener("click", () => {
+			this.close();
+		});
+
+		// Close on Enter key
+		this.scope.register([], "Enter", () => {
+			this.close();
+			return false;
+		});
+	}
+
+	// Method to await the result
+	getResult(): Promise<string | null> {
+		return this.promise;
+	}	
+
 }
 

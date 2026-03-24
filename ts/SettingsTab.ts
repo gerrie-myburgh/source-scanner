@@ -136,3 +136,96 @@ export class ScannerSettingsTab extends PluginSettingTab {
             }
     }
 }
+
+export class CodeScannerTab extends PluginSettingTab {
+	plugin: SourceScanner;
+
+	constructor(app: App, plugin: SourceScanner) {
+		super(app, plugin);
+		this.plugin = plugin;
+		this.app = app;
+	}
+
+	display(): void {
+		const { containerEl } = this;
+
+		containerEl.empty();
+
+		new Setting(containerEl)
+			.setName("Folder")
+			.setDesc("Location of text file to scan")
+			.addText((text) =>
+				text
+					.setPlaceholder("Enter your text file start folder")
+					.setValue(this.plugin.codeScannerSettings.dir)
+					.onChange(async (value) => {
+						this.plugin.codeScannerSettings.dir = value;
+						await this.plugin.saveSettings();
+					}),
+			);
+		new Setting(containerEl)
+			.setName("Working folder")
+			.setDesc("Location of md files")
+			.addText((text) =>
+				text
+					.setPlaceholder("Enter your working folder name")
+					.setValue(this.plugin.codeScannerSettings.work)
+					.onChange(async (value) => {
+						this.plugin.codeScannerSettings.work = value;
+						await this.plugin.saveSettings();
+					}),
+			);
+		new Setting(containerEl)
+			.setName("Start")
+			.setDesc("The start of line to extract to md file")
+			.addText((text) =>
+				text
+					.setPlaceholder("Enter your start string")
+					.setValue(this.plugin.codeScannerSettings.start)
+					.onChange(async (value) => {
+						this.plugin.codeScannerSettings.start = value;
+						await this.plugin.saveSettings();
+					}),
+			);
+		new Setting(containerEl)
+			.setName("Folder structure")
+			.setDesc("The folder structure definition")
+			.addText((text) =>
+				text
+					.setPlaceholder(
+						"Enter your dot separated folder structure definition",
+					)
+					.setValue(this.plugin.codeScannerSettings.path)
+					.onChange(async (value) => {
+						this.plugin.codeScannerSettings.path = value;
+						await this.plugin.saveSettings();
+					}),
+			);
+		new Setting(containerEl)
+			.setName("Extension")
+			.setDesc("Extension of the source text files to scan")
+			.addText((text) =>
+				text
+					.setPlaceholder("Enter your text file extension")
+					.setValue(this.plugin.codeScannerSettings.extension)
+					.onChange(async (value) => {
+						this.plugin.codeScannerSettings.extension = value;
+						await this.plugin.saveSettings();
+					}),
+			);
+		new Setting(containerEl)
+			.setName("Destination file extension")
+			.setDesc(
+				"Extension of the destination files into which extracted text goes",
+			)
+			.addText((text) =>
+				text
+					.setPlaceholder("Enter your destination file extension")
+					.setValue(this.plugin.codeScannerSettings.destExtension)
+					.onChange(async (value) => {
+						this.plugin.codeScannerSettings.destExtension = value;
+						await this.plugin.saveSettings();
+					}),
+			);
+	}
+}
