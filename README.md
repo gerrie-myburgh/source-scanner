@@ -1,97 +1,57 @@
-# Source code scanner
+# Code Scanner
 
-Extracts comments from some source code into notes. The plugin will only work for the Obsidian desktop application and some applications.
+## Motivation
+The previous plugin __Source Scanner__ extracted marked comment blocks and place it in the vault as a file(s).
 
-## Problem that the plugin tries to address
+There are two problem with this approach. The extracted comments went into the vault without a folder structure and the objective was to create a mechanism to document the application worked on.
 
-Developers that uses the agile methodology have a documentation problem. Agile does not mean no documentation, but 
-only the necessary documentation. To enable the developer to minimise the work required to be able to show 
-how business requirements are met and solved, tools are required.
+This version enable the user to define the structure of the documentation. This is best illustrated by an example.
 
-The simplest solution from a developer point of view is to document the business requirement solution in the code itself.
-The ideal place to do this is in the block and line comments of the source code. What you then need are tools to extract these comments into notes and correlate
-the notes with the user requirements. The user requirement will be in the form of user stories also in notes. 
+Suppose the document start folder in the value is __docs__ and you want to preserve information about the structure. Then you can say one set of __docs__ can contain more than one EPIC and each EPIC can contain more that one ITEM and each ITEM can contain more that one TEST case. 
 
-## The use case for this plugin is the following :
+The  previous plugin used WASM to do the actual parsing of the text passed to it by java script. This proved computationally expensive due to the difference in character encoding between WASM and java script.
 
-0. This plugin is restricted to java source. 
-1. Scan source code files for comments that is written out to notes in current specified document vault. These comment can include markdown text.
-2. Correlate the comments with agile user stories.
-3. Create a table of markers along with the notes where the markers appear in. 
+## General
+This plugin scans text files and extract blocks of lines that start with a specified pattern. This pattern can be something like `////` or `//#` or even a `. (dot)`.
 
-## Comments types scanned for in source code
+Once a block of marked lines are extracted it is written into a file that goes in the current vault. Multiple blocks can go into one file. These blocks must then have a unique sequence number that will determine where in the file the block will go. This number must start from 1. For example [1], [2], ...
 
-The following type of comments are picked from source files by the plugin and written out markdown  notes ```/** ... */``` and ```//b ...```  The idea is to pick up only comments that relate to the solving of business rules. The other types of comments, ```/* ... */``` and ```// ....``` 
-are ignored as they are deemed to be comments that explain some of other technical point in the implementation. 
+The extraction of the blocks are done by using rust based executables. The zip file containing the executables is at this [location](https://github.com/gerrie-myburgh/code-scanner-ver2/releases/download/1.0.0/get-comments.zip)  on github.
 
-An example of a block comment that is picked is the following
+The source for the rust program can be found at [github](https://github.com/gerrie-myburgh/get-comments). Do not use the distribution in this git repo  to try make it work with obsidian release, it might be a version ahead of what the current obsidian release need. You can however use this executable if you want to run it from the command line. 
 
-```agsl
-  /**
-   * ## onload()
-   * Load the plugin and setup the commands
-   * 1. Add a command to trigger the creation of solution files. Make sure all configs have been done before running the command
-   * 2. Add ribbon command to toggle scanning _ON_ or _OFF_. Make sure the scanner have been configured before starting it.
-   */
-```
+Download the zip file and extract the content then place the executable files in the root of the ***code-scanner-ver2*** plugin folder. The names of the executable files are:
 
-This will be rendered as follows in the relevant note in the specified document vault.
+ 1. `get-comments-linux`
+ 2. `get-comments-macos`
+ 3. `get-comments.exe`.
 
-# onload()
-Load the plugin and setup the commands
+Make sure that the downloaded executables are in fact set to be executable on your system once downloaded and extracted.
 
-1. Add a command to trigger the creation of solution files. Make sure all configs have been done before running the command
-2. Add ribbon command to toggle scanning _ON_ or _OFF_. Make sure the scanner have been configured before starting it.
+## Configuration
+The plugin must be configured in the settings tab before usage.
 
-### Comment file naming convention
+ - Folder - the root folder where the text files are located to be scanned.
+ - Working Folder - the name of the folder in the vault where the md files will be created
+ - Start - the pattern that starts a block of lines to be extracted.
+ - The markdown file path - this is '.' separated names of permitted folders and text files that may be created. An example of this is `EPIC.ITEM.TEST`. This means that the folder depth may at most be 3 deep. First level after the Start starts with EPIC. The Second level starts with ITEM. The third level starts with TEST.
+  - Extension - the extension of the files to be scanned. An example of this is `.txt`. This means that only files with the extension .txt will be scanned.
+  - Destination file extension - the file extension into which the block of lines will be written into. This extension string is excluding the `.` in front of the extension string.
 
-The scanner must be configured to tell it where the source code is in the file system. Once this is done and the scanner is switched on then the 
-note's name will be the fully qualified name of the class being scanned appended by ".md". This is an example of the note name :
+## Usage
+Once the plugin is loaded then the trigger element will be an eye icon with the tooltip 'Scan text files for comment lines'. Once this is clicked the plugin will scan the text files and create destination files in the vault.
 
-**crosscut.CrossCuttingConcerns.md**
+The command to trigger the scan from the command menu is "scan-text-files".
 
-The file scanned is in this case could be:
+The blocks have a specific format that is used to identify the start of a block. The start of a block is identified by the pattern defined in the Start setting. The end of a block is identified by the an absence of a Start pattern or end of file. The first line of the block is the path name (if any) and text file name into which the block will be written.
 
-**crosscut/CrossCuttingConcerns.scala**
+Note that multiple spaces or tabs in the start of block line is replaced by one space.
 
-## Correlation of notes with the user stories
+Examples of these are:
 
-It is now possible to correlate the generated document notes with the user stories by selecting the menu option :
+ 1. ////EPIC epic file name - This will create a file named `EPIC epic file name.md` under the Working Folder.
+ 2. ////EPIC epic folder name.ITEM item file name - This will create a folder named `EPIC epic folder name` under the Working Folder and the file `ITEM item file name.md` under the EPIC folder. 
+ 3. ////EPIC epic folder name.ITEM item file name [1]- This will insert the text block into the file `ITEM item file name.md` just under the text block created in 2. 
 
-**Create solution file**
-
-This will create mapping notes that links the user story notes to the document notes. 
-
-### User stories.
-
-User stories are given to the developer and he/she can create sub stories from these initial stories. By using markers in the 
-source comments you are able to create cross cutting concerns w.r.t the solution for the story. 
-
-The markers for the comments are of the form :
-
-```agsl
-\s\^[a-zA-Z]+[a-zA-Z0-9]+\-[0-9]+(\-[a-zA-Z]+[a-zA-Z0-9]+\-[0-9]+)*
-```
-
-An example would be: ^JIRA1234-001-solution-001-test-001. Once these markers have been placed in the source comments the system can create mappings between the 
-notes and the stories. The solution files will the look as follows:
-
-![[stories/update-payment-limits/summary of requirement#^summary]]
-
-![[utils.Lexer.md#^story1-00]]
-
-![[Main.md#^story1-02]]
-
-## Create a table of markers
-
-Once the markers have been placed in the source files then they are essentially lost to the person that wants to generate the solution notes 
-to the stories notes. To make it easier to see what marker is in what note and in what sequence, functionality is provided to generate a list of all markers along
-with the note file name they are in. 
-
-This should make is easier to update markers in the source code as required. An example of a such a mapping table is 
-
-|marker|document|
-|------|--------|
-|story1-00|[[utils.Lexer.md#^story1-00]]|
-|story1-02|[[Main.md#^story1-02]]|
-|story2-00|[[Main.md#^story2-00]]|
+## Disclosure
+This plugin uses rust based executables to scan text files outside of the vault to create text files in the vault.
