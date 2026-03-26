@@ -6,14 +6,23 @@ const dialog = electron.dialog
 
 export class ScannerSettingsTab extends PluginSettingTab {
 	plugin: SourceScanner;
-
-	constructor(app: App, plugin: SourceScanner) {
+    version: String;
+	constructor(app: App, plugin: SourceScanner, version: String) {
 		super(app, plugin);
 		this.plugin = plugin;
+        this.version = version;
 	}
 
 	display(): void {
-		const {containerEl} = this;
+		if (this.version == "version1") {
+            this.sourceScanner();
+        } else {
+            this.textScanner();
+        }
+    }
+
+    sourceScanner(): void {
+        const {containerEl} = this;
 
 		containerEl.empty();
         //
@@ -73,7 +82,7 @@ export class ScannerSettingsTab extends PluginSettingTab {
                         ));
             
 
-            new Setting(containerEl)
+            const documentPath = new Setting(containerEl)
                 .setName("Documentation Path")
                 .setDesc("Path to document workspace relative from vault")
                 .addText(text => text
@@ -87,7 +96,7 @@ export class ScannerSettingsTab extends PluginSettingTab {
                         )
                         );
                 
-            new Setting(containerEl)
+            const applicationType = new Setting(containerEl)
                 .setName("Application type")
                 .setDesc("Type of application")
                 .addDropdown(dropDown => 
@@ -106,7 +115,7 @@ export class ScannerSettingsTab extends PluginSettingTab {
                             })
                     );
 
-            new Setting(containerEl)
+            const activationInterval = new Setting(containerEl)
                 .setName("Activation interval")
                 .setDesc("Activation interval in ms")
                 .addText(text => text
@@ -120,7 +129,7 @@ export class ScannerSettingsTab extends PluginSettingTab {
                         )
                         );
 
-            new Setting(containerEl)
+            const numberOfSrcFiles = new Setting(containerEl)
                 .setName("Number of source files to process")
                 .setDesc("Number of source files to process at a time")
                 .addText(text => text
@@ -135,23 +144,13 @@ export class ScannerSettingsTab extends PluginSettingTab {
                         );
             }
     }
-}
 
-export class CodeScannerTab extends PluginSettingTab {
-	plugin: SourceScanner;
-
-	constructor(app: App, plugin: SourceScanner) {
-		super(app, plugin);
-		this.plugin = plugin;
-		this.app = app;
-	}
-
-	display(): void {
+    textScanner(): void {
 		const { containerEl } = this;
 
 		containerEl.empty();
 
-		new Setting(containerEl)
+		const folder = new Setting(containerEl)
 			.setName("Folder")
 			.setDesc("Location of text file to scan")
 			.addText((text) =>
@@ -163,7 +162,7 @@ export class CodeScannerTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					}),
 			);
-		new Setting(containerEl)
+		const workingFolder = new Setting(containerEl)
 			.setName("Working folder")
 			.setDesc("Location of md files")
 			.addText((text) =>
@@ -175,7 +174,7 @@ export class CodeScannerTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					}),
 			);
-		new Setting(containerEl)
+		const startLine = new Setting(containerEl)
 			.setName("Start")
 			.setDesc("The start of line to extract to md file")
 			.addText((text) =>
@@ -187,7 +186,7 @@ export class CodeScannerTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					}),
 			);
-		new Setting(containerEl)
+		const folderStructure = new Setting(containerEl)
 			.setName("Folder structure")
 			.setDesc("The folder structure definition")
 			.addText((text) =>
@@ -201,7 +200,7 @@ export class CodeScannerTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					}),
 			);
-		new Setting(containerEl)
+		const extension = new Setting(containerEl)
 			.setName("Extension")
 			.setDesc("Extension of the source text files to scan")
 			.addText((text) =>
@@ -213,7 +212,7 @@ export class CodeScannerTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					}),
 			);
-		new Setting(containerEl)
+		const destinationExtension = new Setting(containerEl)
 			.setName("Destination file extension")
 			.setDesc(
 				"Extension of the destination files into which extracted text goes",
@@ -227,5 +226,5 @@ export class CodeScannerTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					}),
 			);
-	}
+    }
 }

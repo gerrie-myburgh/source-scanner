@@ -10,7 +10,6 @@ import {
 	Notice } from 'obsidian';
 
 import { ScannerSettingsTab } from "./ts/SettingsTab";
-import { CodeScannerTab } from './ts/SettingsTab';
 import { ScanSource } from './ts/ScanSource'
 import { CrossCuttingConcerns } from './ts/CrossCuttingConcerns';
 import { MarkerGroupList } from './ts/MarkerGroupList';
@@ -60,6 +59,107 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
 }
 
 const VERSION = "1.0.1";
+
+export class VersionSelectionModal extends Modal {
+    private static currentModal: VersionSelectionModal | null = null;
+    private resolvePromise: ((value: string) => void) | null = null;
+    private rejectPromise: (() => void) | null = null;
+    private selectedVersion: string = 'version1';
+
+    private constructor(app: App) {
+        super(app);
+    }
+
+    static async selectVersion(app: App): Promise<string> {
+        // Close any existing modal
+        if (VersionSelectionModal.currentModal) {
+            VersionSelectionModal.currentModal.close();
+        }
+        
+        const modal = new VersionSelectionModal(app);
+        VersionSelectionModal.currentModal = modal;
+        
+        return new Promise((resolve, reject) => {
+            modal.resolvePromise = resolve;
+            modal.rejectPromise = reject;
+            modal.open();
+        });
+    }
+
+    onOpen() {
+        const { contentEl } = this;
+
+        contentEl.createEl('h2', { text: 'Select Version' });
+        
+        // Create container for radio buttons
+        const radioContainer = contentEl.createDiv();
+        radioContainer.style.marginBottom = '20px';
+        
+        // Version 1 radio
+        const version1Container = radioContainer.createDiv();
+        version1Container.style.marginBottom = '10px';
+        
+        const version1Radio = version1Container.createEl('input', {
+            type: 'radio',
+            value: 'version1',
+            attr: { id: 'version1' }
+        });
+        version1Container.createEl('label', { text: ' Version1', attr: { for: 'version1' } });
+        
+        // Version 2 radio
+        const version2Container = radioContainer.createDiv();
+        version2Container.style.marginBottom = '10px';
+        
+        const version2Radio = version2Container.createEl('input', {
+            type: 'radio',
+            value: 'version2',
+            attr: { id: 'version2' }
+        });
+        version2Container.createEl('label', { text: ' Version2', attr: { for: 'version2' } });
+        
+        // Set default selection
+        version1Radio.checked = true;
+        
+        // Add event listeners
+        version1Radio.addEventListener('change', () => {
+            if (version1Radio.checked) this.selectedVersion = 'version1';
+        });
+        
+        version2Radio.addEventListener('change', () => {
+            if (version2Radio.checked) this.selectedVersion = 'version2';
+        });
+        
+        // Button container
+        const buttonContainer = contentEl.createDiv();
+        buttonContainer.style.display = 'flex';
+        buttonContainer.style.gap = '10px';
+        buttonContainer.style.justifyContent = 'flex-end';
+        buttonContainer.style.marginTop = '20px';
+        
+        // Cancel button
+        const cancelBtn = buttonContainer.createEl('button', { text: 'Cancel' });
+        cancelBtn.addEventListener('click', () => {
+            this.close();
+            if (this.rejectPromise) this.rejectPromise();
+        });
+        
+        // Submit button
+        const submitBtn = buttonContainer.createEl('button', { 
+            text: 'Submit',
+            cls: 'mod-cta'
+        });
+        submitBtn.addEventListener('click', () => {
+            this.close();
+            if (this.resolvePromise) this.resolvePromise(this.selectedVersion);
+        });
+    }
+
+    onClose() {
+        const { contentEl } = this;
+        contentEl.empty();
+        VersionSelectionModal.currentModal = null;
+    }
+}
 
 export default class SourceScanner extends Plugin {
 	app: App;
@@ -264,10 +364,25 @@ export default class SourceScanner extends Plugin {
 			.catch((err) => console.warn("scan code"));
 	}
 
+	async handleVersionSelection(): Promise<string> {
+    	try {
+        	const selectedVersion = await VersionSelectionModal.selectVersion(app);
+        	console.log('Selected:', selectedVersion);
+        	return selectedVersion;
+    	} catch (error) {
+	        console.log('User cancelled');
+	    }
+		return "cancel";
+	}
+
 	async onload() {
 
 		await this.loadSettings();
 
+
+		// This adds a settings tab so the user can configure various aspects of the plugin
+		// In your main plugin file or command callback
+	
 		var sbItem = this.addStatusBarItem()
 		sbItem.setText("Comment scanner OFF")
 
@@ -348,9 +463,6 @@ export default class SourceScanner extends Plugin {
 				}
 			}
 		});
-
-		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new ScannerSettingsTab(this.app, this));
 
 		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
 		// Using this function will automatically remove the event listener when this plugin is disabled.
@@ -443,4 +555,3 @@ class InfoModal extends Modal {
 	}	
 
 }
-
