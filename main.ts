@@ -58,16 +58,31 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
 
 const VERSION = "1.0.1";
 
+/**
+ * A modal dialog that allows users to select between two versions of the plugin.
+ * Presents radio buttons for version1 and version2 with OK/Cancel buttons.
+ */
 export class VersionSelectionModal extends Modal {
 	private static currentModal: VersionSelectionModal | null = null;
 	private resolvePromise: ((value: string) => void) | null = null;
 	private rejectPromise: (() => void) | null = null;
 	private selectedVersion: string = 'version1';
 
+	/**
+	 * Creates a new VersionSelectionModal instance.
+	 * @param app The Obsidian app instance
+	 */
 	private constructor(app: App) {
 		super(app);
 	}
 
+	/**
+	 * Static method to open a version selection modal and await user selection.
+	 * Ensures only one instance of the modal is open at a time.
+	 * @param app The Obsidian app instance
+	 * @returns A promise that resolves to the selected version ("version1" or "version2")
+	 *          or rejects if the user cancels the selection
+	 */
 	static async selectVersion(app: App): Promise<string> {
 		// Close any existing modal
 		if (VersionSelectionModal.currentModal) {
@@ -84,6 +99,10 @@ export class VersionSelectionModal extends Modal {
 		});
 	}
 
+	/**
+	 * Called when the modal is opened.
+	 * Sets up the modal UI with version selection radio buttons and action buttons.
+	 */
 	onOpen() {
 		const { contentEl } = this;
 
@@ -152,6 +171,10 @@ export class VersionSelectionModal extends Modal {
 		});
 	}
 
+	/**
+	 * Called when the modal is closed.
+	 * Cleans up the modal UI and resets the static currentModal reference.
+	 */
 	onClose() {
 		const { contentEl } = this;
 		contentEl.empty();
@@ -161,13 +184,17 @@ export class VersionSelectionModal extends Modal {
 
 export default class SourceScanner extends Plugin {
 	app: App;
-	settings: CodeScannerSettings;
 	settings: MyPluginSettings;
 	intervalHandle: any = undefined;
 	scanSource = new ScanSource();
 	utils: Utils;
 	version: string;
 
+	/**
+	 * Creates a new instance of the SourceScanner plugin.
+	 * @param app The Obsidian app instance
+	 * @param manifest The plugin manifest
+	 */
 	constructor(app: App, manifest: PluginManifest) {
 		super(app, manifest);
 		this.app = app;
@@ -183,6 +210,15 @@ export default class SourceScanner extends Plugin {
 		return existsSync(executablePath);
 	}
 
+	/**
+	 * Gets the platform-specific executable path and work folder.
+	 * Determines the correct executable path based on the current operating system
+	 * and constructs the work folder path.
+	 * @returns A tuple containing:
+	 *   - boolean: true if platform is supported and adapter is FileSystemAdapter
+	 *   - string?: The executable path (if platform supported)
+	 *   - string?: The work folder path (if platform supported)
+	 */
 	private getPlatformPathAndName(): [boolean, string?, string?] {
 		const platform = process.platform; // e.g., 'darwin', 'win32', 'linux'
 		const adapter = this.app.vault.adapter;
@@ -195,7 +231,7 @@ export default class SourceScanner extends Plugin {
 					adapter.getBasePath() +
 					"\\" +
 					this.app.vault.configDir +
-					"\\plugins\\code-scanner-ver2";
+					"\\plugins\\source-scanner";
 				executablePath = basePath + "\\get-comments.exe";
 				if (this.settings.work.startsWith("\\")) {
 					workFolder = this.settings.work;
@@ -207,7 +243,7 @@ export default class SourceScanner extends Plugin {
 					adapter.getBasePath() +
 					"/" +
 					this.app.vault.configDir +
-					"/plugins/code-scanner-ver2";
+					"/plugins/source-scanner";
 				executablePath = basePath + "/get-comments-macos";
 				if (this.settings.work.startsWith("/")) {
 					workFolder = this.settings.work;
@@ -219,7 +255,7 @@ export default class SourceScanner extends Plugin {
 					adapter.getBasePath() +
 					"/" +
 					this.app.vault.configDir +
-					"/plugins/code-scanner-ver2";
+					"/plugins/source-scanner";
 				executablePath = basePath + "/get-comments-linux";
 				if (this.settings.work.startsWith("/")) {
 					workFolder = this.settings.work;
@@ -239,6 +275,12 @@ export default class SourceScanner extends Plugin {
 		return [false];
 	}
 
+	/**
+	 * Checks the version of the CLI executable.
+	 * Verifies that the CLI executable exists and that its version matches
+	 * the expected plugin version. Shows error modals if issues are found.
+	 * @throws {Error} If the CLI version doesn't match the plugin version
+	 */
 	private async checkCLIVersion(): Promise<void> {
 		const parameters = ["-ver"];
 		const path = this.getPlatformPathAndName();
@@ -274,6 +316,11 @@ export default class SourceScanner extends Plugin {
 		}
 	}
 
+	/**
+	 * Triggers a scan of text files for comment lines.
+	 * Executes the CLI tool to scan directories for comments based on configured settings.
+	 * Shows appropriate modals for errors, process output, and completion status.
+	 */
 	private async triggerScan() {
 		if (this.settings.dir == "UNKNOWN") {
 			new InfoModal(
@@ -372,6 +419,11 @@ export default class SourceScanner extends Plugin {
 			.catch((err) => console.warn("scan code"));
 	}
 
+	/**
+	 * Handles version selection for the plugin.
+	 * Presents a modal to the user to choose between version1 and version2.
+	 * @returns The selected version as a string ("version1", "version2", or "cancel")
+	 */
 	async handleVersionSelection(): Promise<string> {
 		try {
 			const selectedVersion = await VersionSelectionModal.selectVersion(app);
@@ -383,6 +435,11 @@ export default class SourceScanner extends Plugin {
 		return "cancel";
 	}
 
+	/**
+	 * Called when the plugin is loaded.
+	 * Initializes the plugin, loads settings, determines which version to use,
+	 * and sets up the appropriate UI components and commands based on the selected version.
+	 */
 	async onload() {
 		await this.loadSettings();
 
@@ -467,27 +524,6 @@ export default class SourceScanner extends Plugin {
 				}
 			});
 
-
-			// This adds a complex command that can check whether the current state of the app allows execution of the command
-			this.addCommand({
-				id: 'open-sample-modal-complex',
-				name: 'Open sample modal (complex)',
-				checkCallback: (checking: boolean) => {
-					// Conditions to check
-					const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-					if (markdownView) {
-						// If checking is true, we're simply "checking" if the command can be run.
-						// If checking is false, then we want to actually perform the operation.
-						if (!checking) {
-							new SampleModal(this.app).open();
-						}
-
-						// This command will only show up in Command Palette when the check function returns true
-						return true;
-					}
-				}
-			});
-
 			// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
 			// Using this function will automatically remove the event listener when this plugin is disabled.
 			this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
@@ -498,6 +534,9 @@ export default class SourceScanner extends Plugin {
 			this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
 
 			await lexer_plugin.default(Promise.resolve(lexer_wasm.default));
+
+			// This adds a settings tab so the user can configure various aspects of the plugin
+			this.addSettingTab(new ScannerSettingsTab(this.app, this, "version1"));			
 		} else {
 			// make sure that the cli exist in the correct place and the versions match
 			await this.loadSettings();
@@ -524,6 +563,10 @@ export default class SourceScanner extends Plugin {
 		}
 	}
 
+	/**
+	 * Called when the plugin is unloaded.
+	 * Cleans up any resources, intervals, or event listeners created by the plugin.
+	 */
 	onunload() {
 		if (this.intervalHandle != undefined) {
 			clearInterval(this.intervalHandle);
@@ -531,34 +574,36 @@ export default class SourceScanner extends Plugin {
 		}
 	}
 
+	/**
+	 * Loads the plugin settings from persistent storage.
+	 * Merges saved settings with default settings.
+	 */
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 	}
 
+	/**
+	 * Saves the plugin settings to persistent storage.
+	 */
 	async saveSettings() {
 		await this.saveData(this.settings);
 	}
 }
 
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
-
-	onOpen() {
-		const { contentEl } = this;
-		contentEl.setText('Woah!');
-	}
-
-	onClose() {
-		const { contentEl } = this;
-		contentEl.empty();
-	}
-}
+/**
+ * A simple informational modal dialog that displays a title and message.
+ * Includes an OK button and returns a promise that resolves when the modal is closed.
+ */
 class InfoModal extends Modal {
 	private resolvePromise: (value: string | null) => void;
 	private promise: Promise<string | null>;
 
+	/**
+	 * Creates a new InfoModal instance.
+	 * @param app The Obsidian app instance
+	 * @param title The title to display in the modal header
+	 * @param message The message to display in the modal body
+	 */
 	constructor(
 		app: App,
 		public title: string,
@@ -571,6 +616,11 @@ class InfoModal extends Modal {
 		});
 	}
 
+	/**
+	 * Called when the modal is opened.
+	 * Sets up the modal UI with title, message, and OK button.
+	 * Also registers Enter key to close the modal.
+	 */
 	onOpen() {
 		const { contentEl } = this;
 
@@ -596,7 +646,11 @@ class InfoModal extends Modal {
 		});
 	}
 
-	// Method to await the result
+	/**
+	 * Returns a promise that resolves when the modal is closed.
+	 * This allows callers to await user interaction with the modal.
+	 * @returns A promise that resolves to a string or null when the modal is closed
+	 */
 	getResult(): Promise<string | null> {
 		return this.promise;
 	}
