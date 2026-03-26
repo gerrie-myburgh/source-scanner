@@ -156,9 +156,9 @@ export class ScannerSettingsTab extends PluginSettingTab {
 			.addText((text) =>
 				text
 					.setPlaceholder("Enter your text file start folder")
-					.setValue(this.plugin.codeScannerSettings.dir)
+					.setValue(this.plugin.settings.dir)
 					.onChange(async (value) => {
-						this.plugin.codeScannerSettings.dir = value;
+						this.plugin.settings.dir = value;
 						await this.plugin.saveSettings();
 					}),
 			);
@@ -168,9 +168,9 @@ export class ScannerSettingsTab extends PluginSettingTab {
 			.addText((text) =>
 				text
 					.setPlaceholder("Enter your working folder name")
-					.setValue(this.plugin.codeScannerSettings.work)
+					.setValue(this.plugin.settings.work)
 					.onChange(async (value) => {
-						this.plugin.codeScannerSettings.work = value;
+						this.plugin.settings.work = value;
 						await this.plugin.saveSettings();
 					}),
 			);
@@ -180,9 +180,9 @@ export class ScannerSettingsTab extends PluginSettingTab {
 			.addText((text) =>
 				text
 					.setPlaceholder("Enter your start string")
-					.setValue(this.plugin.codeScannerSettings.start)
+					.setValue(this.plugin.settings.start)
 					.onChange(async (value) => {
-						this.plugin.codeScannerSettings.start = value;
+						this.plugin.settings.start = value;
 						await this.plugin.saveSettings();
 					}),
 			);
@@ -194,9 +194,9 @@ export class ScannerSettingsTab extends PluginSettingTab {
 					.setPlaceholder(
 						"Enter your dot separated folder structure definition",
 					)
-					.setValue(this.plugin.codeScannerSettings.path)
+					.setValue(this.plugin.settings.path)
 					.onChange(async (value) => {
-						this.plugin.codeScannerSettings.path = value;
+						this.plugin.settings.path = value;
 						await this.plugin.saveSettings();
 					}),
 			);
@@ -206,9 +206,9 @@ export class ScannerSettingsTab extends PluginSettingTab {
 			.addText((text) =>
 				text
 					.setPlaceholder("Enter your text file extension")
-					.setValue(this.plugin.codeScannerSettings.extension)
+					.setValue(this.plugin.settings.extension)
 					.onChange(async (value) => {
-						this.plugin.codeScannerSettings.extension = value;
+						this.plugin.settings.extension = value;
 						await this.plugin.saveSettings();
 					}),
 			);
@@ -220,9 +220,9 @@ export class ScannerSettingsTab extends PluginSettingTab {
 			.addText((text) =>
 				text
 					.setPlaceholder("Enter your destination file extension")
-					.setValue(this.plugin.codeScannerSettings.destExtension)
+					.setValue(this.plugin.settings.destExtension)
 					.onChange(async (value) => {
-						this.plugin.codeScannerSettings.destExtension = value;
+						this.plugin.settings.destExtension = value;
 						await this.plugin.saveSettings();
 					}),
 			);
