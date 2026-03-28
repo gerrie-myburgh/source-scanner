@@ -8,7 +8,7 @@ import { execSync } from 'child_process';
 import path from 'path';
 import fs from 'fs';
 
-const banner = `...`; // your banner
+const banner = `// Source Scanner`; // your banner
 const prod = (process.argv[2] === 'production');
 
 // Build Rust/WASM first

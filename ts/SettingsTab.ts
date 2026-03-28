@@ -7,12 +7,22 @@ const dialog = electron.dialog
 export class ScannerSettingsTab extends PluginSettingTab {
 	plugin: SourceScanner;
     version: String;
+    
+    /**
+     * Creates a new ScannerSettingsTab instance
+     * @param app - The Obsidian app instance
+     * @param plugin - The SourceScanner plugin instance
+     * @param version - The version of settings to display ("version1" for source scanner, otherwise text scanner)
+     */
 	constructor(app: App, plugin: SourceScanner, version: String) {
 		super(app, plugin);
 		this.plugin = plugin;
         this.version = version;
 	}
 
+    /**
+     * Displays the settings tab based on the version
+     */
 	display(): void {
 		if (this.version == "version1") {
             this.sourceScanner();
@@ -21,6 +31,9 @@ export class ScannerSettingsTab extends PluginSettingTab {
         }
     }
 
+    /**
+     * Displays the source scanner settings interface
+     */
     sourceScanner(): void {
         const {containerEl} = this;
 
@@ -145,35 +158,59 @@ export class ScannerSettingsTab extends PluginSettingTab {
             }
     }
 
+    /**
+     * Displays the text scanner settings interface
+     */
     textScanner(): void {
 		const { containerEl } = this;
 
 		containerEl.empty();
+        var appPathSetting = new Setting(containerEl);
 
-		const folder = new Setting(containerEl)
-			.setName("Folder")
-			.setDesc("Location of text file to scan")
-			.addText((text) =>
-				text
-					.setPlaceholder("Enter your text file start folder")
-					.setValue(this.plugin.settings.dir)
-					.onChange(async (value) => {
-						this.plugin.settings.dir = value;
-						await this.plugin.saveSettings();
-					}),
-			);
-		const workingFolder = new Setting(containerEl)
-			.setName("Working folder")
-			.setDesc("Location of md files")
-			.addText((text) =>
-				text
-					.setPlaceholder("Enter your working folder name")
-					.setValue(this.plugin.settings.work)
-					.onChange(async (value) => {
-						this.plugin.settings.work = value;
-						await this.plugin.saveSettings();
-					}),
-			);
+        appPathSetting
+                .setName("Application Path")
+                .setDesc(`Application workspace: ${this.plugin.settings.applicationPath}`)
+                .addButton(button =>
+                    button
+                        .setButtonText("Location of text file to scan")
+                        .onClick((cb : MouseEvent) =>
+                            {
+                                dialog.showOpenDialog({properties: ['openDirectory'] })
+                                .then(async (result: { canceled: any; filePaths: string[]; }) => {
+                                    console.log(result.canceled)
+                                    console.log(result.filePaths)
+                                    this.plugin.settings.dir = result.filePaths[0];
+                                    appPathSetting.setDesc(`Application workspace: ${this.plugin.settings.applicationPath}`)
+                                    await this.plugin.saveSettings();
+                                  }).catch((err: any) => {
+                                    console.log(err)
+                                  });
+                            }
+                        ));
+          
+        var textDestination = new Setting(containerEl);
+
+        textDestination
+                .setName("Application Path")
+                .setDesc(`Application workspace: ${this.plugin.settings.applicationPath}`)
+                .addButton(button =>
+                    button
+                        .setButtonText("Location of files to place text in")
+                        .onClick((cb : MouseEvent) =>
+                            {
+                                dialog.showOpenDialog({properties: ['openDirectory'] })
+                                .then(async (result: { canceled: any; filePaths: string[]; }) => {
+                                    console.log(result.canceled)
+                                    console.log(result.filePaths)
+                                    this.plugin.settings.work = result.filePaths[0];
+                                    textDestination.setDesc(`Application workspace: ${this.plugin.settings.applicationPath}`)
+                                    await this.plugin.saveSettings();
+                                  }).catch((err: any) => {
+                                    console.log(err)
+                                  });
+                            }
+                        ));
+
 		const startLine = new Setting(containerEl)
 			.setName("Start")
 			.setDesc("The start of line to extract to md file")

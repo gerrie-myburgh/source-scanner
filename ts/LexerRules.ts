@@ -6,9 +6,11 @@ export class LexerRules {
 
     private parsed: string = '';
     private java_escape_chars = ['t','b','n','r','f','\'','"','\\'];
-   /*
-    * get a character from the parse string
-    */
+    
+    /**
+     * Gets the next character from the parse string
+     * @returns A tuple containing [success, character, index]
+     */
     private getChar() {
       if (this.idx == this.parseString.length) {
         return [false, ' ' , this.idx]
@@ -19,9 +21,11 @@ export class LexerRules {
       }
     }
     
-    /*
-    * is the next number of characters same as the str
-    */
+    /**
+     * Checks if the next characters in the parse string match the given string
+     * @param str - The string to check for
+     * @returns True if the next characters match the given string
+     */
     private isString(str : string) {
       if (str.length > this.parseString.length - this.idx) {
         return false
@@ -30,9 +34,9 @@ export class LexerRules {
       }
     }
 
-    /*
-    * get the string literal
-    */
+    /**
+     * Parses a string literal from the source code
+     */
     private getString() {
         do {
             var ch = this.getChar();
@@ -46,9 +50,9 @@ export class LexerRules {
         } while(ch[0] && ch[1] != '"');
     }
 
-    /*
-    * get a line business comment
-    */
+    /**
+     * Parses a line business comment (//bus)
+     */
     private lineComment() {
         this.idx += 4
         var runWhile = false;
@@ -65,9 +69,10 @@ export class LexerRules {
         } while(runWhile)
     }  
 
-    /*
-    * capture all the characters up to str
-    */
+    /**
+     * Captures characters until the specified string is found
+     * @param str - The string to capture up to
+     */
     private captureCharsUpTo(str: String) {
         const firstChar = str.charAt(0)
         const restStr = str.substring(1)
@@ -91,9 +96,10 @@ export class LexerRules {
         } while (runWhile)
     }
 
-    /*
-    * scan the parse string for block and line comments
-    */
+    /**
+     * Scans the parse string for block and line comments
+     * @returns True if scanning should continue, false if end of string reached
+     */
     private scan() {
         const ch = this.getChar();
         if (ch[0]) {
@@ -113,10 +119,11 @@ export class LexerRules {
         }
     }
 
-    /*
-    * parse the input str for comments
-    * return the ( comment, meta ) strings
-    */
+    /**
+     * Parses source code to extract comments
+     * @param src - The source code to parse
+     * @returns The extracted comments as a string
+     */
     parseSource(src : string)  {
         this.parseString = src
         this.idx = 0

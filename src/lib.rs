@@ -2,58 +2,72 @@ use itertools::Itertools;
 use js_sys::*;
 use wasm_bindgen::prelude::wasm_bindgen;
 
-//
-// Type definitions for the tuple of comments and strings
-//
+/// Type alias for start string in delimiter pairs
 type StartStr<'a> = &'a str;
+
+/// Type alias for end string in delimiter pairs
 type EndStr<'a> = &'a str;
 
+/// Action to take when a substring is found between delimiters
 #[derive(Eq, PartialEq, Hash)]
 enum ConsumeAction {
+    /// Include the substring in the result
     Take,
+    /// Exclude the substring from the result
     Ignore,
 }
 
-//
-// start string to look for, end string to end looking for, the lis of escape sequences
-// for the string between start end end strings.
-//
+/// Tuple defining start and end delimiters for substring extraction
+/// 
+/// Contains:
+/// - Start delimiter string
+/// - End delimiter string  
+/// - Escape sequences to handle within the substring
+/// - Action to take (Take or Ignore)
 #[derive(Eq, PartialEq, Hash)]
 struct StartEndTuple<'a>(
+    /// Start delimiter string
     StartStr<'a>,
+    /// End delimiter string
     EndStr<'a>,
+    /// Escape sequences to handle within the substring (escape_string, replacement_string)
     &'a [(&'a str, &'a str)],
+    /// Action to take when substring is found (Take or Ignore)
     &'a ConsumeAction,
 );
 
-//
-// escape result th string to be sscaped and the relacement string
-//
+/// Result of escape sequence processing
 #[derive(Debug)]
 struct EscResult<'a>(pub &'a str, pub &'a str);
+
+/// Result of substring scanning operation
 #[derive(Debug)]
 enum SubStrResult<'a> {
-    //
-    //termination string
-    //
+    /// Termination string found (or not found)
     TermStr(Option<&'a str>),
-    //
-    // escape sequence string
-    //
+    /// Escape sequence found
     EscStr(EscResult<'a>),
 }
 
-//
-// The lexer definition and implimentation
-//
+/// Lexer for extracting substrings between delimiter pairs
+/// 
+/// The lexer scans through a string and extracts substrings that appear
+/// between defined start and end delimiter pairs, handling escape sequences.
 struct Lex<'a> {
+    /// The input string to be scanned
     pub str: &'a str,
 }
 
 impl Lex<'_> {
-    ///
     /// Get the substring starting at index `i` for the length of `n` from `self.str`
     ///
+    /// # Arguments
+    /// * `i` - Starting index in the string
+    /// * `n` - Length of substring to extract
+    ///
+    /// # Returns
+    /// * `Some(String)` containing the substring if indices are valid
+    /// * `None` if indices are out of bounds or length is 0
     fn substring(&self, i: usize, n: usize) -> Option<String> {
         if n == 0 || i + n > self.str.len() {
             None
@@ -69,9 +83,16 @@ impl Lex<'_> {
         }
     }
 
-    ///
     /// Check if the string `s` is the same as the substring taken from `self.str` starting at index `i` with length `n`
     ///
+    /// # Arguments
+    /// * `i` - Starting index in the string
+    /// * `n` - Length of substring to compare
+    /// * `s` - String to compare against
+    ///
+    /// # Returns
+    /// * `Some(&str)` containing `s` if the substring starts with `s`
+    /// * `None` if the substring doesn't start with `s` or indices are invalid
     fn is_substring_same_as_string<'a>(&self, i: usize, n: usize, s: &'a str) -> Option<&'a str> {
         let substring = self.substring(i, n);
         match substring {
@@ -86,9 +107,15 @@ impl Lex<'_> {
         }
     }
 
+    /// Check if the start string starts with the given string `s`
     ///
-    /// does start_str start with s
+    /// # Arguments
+    /// * `start_str` - Optional start string to check
+    /// * `s` - String to check if `start_str` starts with it
     ///
+    /// # Returns
+    /// * `Some(&str)` containing `s` if `start_str` starts with `s`
+    /// * `None` if `start_str` doesn't start with `s` or is `None`
     fn does_start_string_start_with_s<'a>(
         &self,
         start_str: &Option<String>,
@@ -101,9 +128,14 @@ impl Lex<'_> {
         }
     }
 
-    ///
     /// Check if the substring starting at index `i` and length `n` is the same as `s` or any escape sequence in `esc`
     ///
+    /// # Arguments
+    /// * `i` - Starting index in the string
+    /// * `n` - Length of substring to check
+    /// * `s` - Termination string to look for
+    /// * `esc` - Slice of escape sequence tuples (escape_string, replacement_string)
+    /// * `res` - Mutable reference to store the result
     fn is_substring_same_as_string_or_esc_seq<'a>(
         &self,
         i: usize,
@@ -139,9 +171,16 @@ impl Lex<'_> {
         *res = result;
     }
 
+    /// Get the substring by joining all fragments and increment the iterator
     ///
-    /// get the substring by joining all the fragment and incriment the iterator
-    ///
+    /// # Arguments
+    /// * `str_parts` - Vector of string fragments collected so far
+    /// * `start_of_what_i_want` - Optional starting index of the substring
+    /// * `ch` - Tuple containing (length, character) for substring calculation
+    /// * `result` - Vector to store the final extracted substring
+    /// * `en` - End delimiter string
+    /// * `it` - Character iterator
+    /// * `consume_action` - Action to take (Take or Ignore)
     fn get_sub_string<'a>(
         &'a self,
         str_parts: &mut Vec<String>,
@@ -164,11 +203,16 @@ impl Lex<'_> {
         });
     }
 
+    /// Get a string that consists of the left substring and the escaped sequence
+    /// Replace the escaped sequence with the substitute string and continue looking for the end of the substring
     ///
-    /// get a string that consist of the left substring and the escaped sequense
-    /// replace the escaped sequence with the substitute string and carry on
-    /// looking for the end of the substring
-    ///
+    /// # Arguments
+    /// * `str_parts` - Vector of string fragments collected so far
+    /// * `start_of_what_i_want` - Mutable reference to the starting index
+    /// * `ch` - Tuple containing (index, character) of current position
+    /// * `sub` - Replacement string for the escape sequence
+    /// * `esc` - Escape string that was found
+    /// * `it` - Character iterator
     fn get_escaped_string<'a>(
         &'a self,
         str_parts: &mut Vec<String>,
@@ -193,12 +237,16 @@ impl Lex<'_> {
         }
     }
 
+    /// Given a list of start and end strings, return all strings between these delimiting strings in `self.str`
     ///
-    /// given a list of start and end strings return all the strings between these
-    /// 2 delimiting strings in the self.str. Take the first delimiting strings that matches
-    /// and skip the rest. This means that you need to be carefull how the delimiters are
-    /// defined.
+    /// Takes the first delimiting strings that matches and skips the rest. This means you need to be careful
+    /// how the delimiters are defined (longer matches should come before shorter ones).
     ///
+    /// # Arguments
+    /// * `start_end` - Slice of `StartEndTuple` references defining delimiter pairs
+    ///
+    /// # Returns
+    /// * `String` containing all extracted substrings joined by newlines
     pub fn get_substrings_between_two_strings(
         &self,
         start_end: &mut [&StartEndTuple<'static>],
@@ -332,15 +380,34 @@ impl Lex<'_> {
     }
 }
 
+/// Scan source code for comments and return them as a string
+///
+/// This function is exposed to JavaScript via `wasm_bindgen` and is the main entry point
+/// for the comment scanning functionality. It extracts various types of comments from
+/// source code including:
+/// - Block comments (`/** ... * /`)
+/// - Line comments (`/// ...`)
+/// - Business comments (`//b ...`)
+/// - Triple-quoted strings (`""" ... """`) - ignored
+/// - Double-quoted strings (`" ... "`) - ignored (with escape sequence handling)
+///
+/// # Arguments
+/// * `str` - JavaScript string containing the source code to scan
+///
+/// # Returns
+/// * `JsString` containing all extracted comments joined by newlines
+///
+/// # Note
+/// Delimiter order matters: longer matches should come before shorter ones when they
+/// share common prefixes.
 #[wasm_bindgen]
 pub fn scan_for_comments(str: JsString) -> JsString {
     let lexer = Lex {
         str: &str.as_string().unwrap(),
     };
-    //
-    // setup the delimeters NOTE order matters. longest match first then shorter matches
+    
+    // Setup the delimiters - NOTE order matters: longest match first then shorter matches
     // in case of same characters in match
-    //
     let mut start_end_delim = [
         &StartEndTuple(&"/**", &"*/", &[], &ConsumeAction::Take),
         &StartEndTuple(&"///", &"\n", &[], &ConsumeAction::Take),
