@@ -6,7 +6,6 @@ import {
 	Modal,
 	PluginManifest,
 	Plugin,
-	PluginSettingTab,
 	Notice
 } from 'obsidian';
 
@@ -44,9 +43,9 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
 	documentPath: 'UNKNOWN',
 	applicationExtension: '.java',
 	unitTestPath: "UNKNOWN",
-	sleepLength: 0.0,
+	sleepLength: 1000.0,
 	applicationPath: 'UNKNOWN',
-	groupBySize: 0.0,
+	groupBySize: 10.0,
 
 	dir: "UNKNOWN",
 	work: "UNKNOWN",
@@ -106,7 +105,7 @@ export class VersionSelectionModal extends Modal {
 	onOpen() {
 		const { contentEl } = this;
 
-		contentEl.createEl('h2', { text: 'Select Version' });
+		contentEl.createEl('h2', { text: 'Select Version of source scanner you want to use.' });
 
 		// Create container for radio buttons
 		const radioContainer = contentEl.createDiv();
@@ -121,7 +120,7 @@ export class VersionSelectionModal extends Modal {
 			value: 'version1',
 			attr: { id: 'version1', name: 'versionSelection' }
 		});
-		version1Container.createEl('label', { text: ' Version1', attr: { for: 'version1' } });
+		version1Container.createEl('label', { text: ' Version1 of source scanner', attr: { for: 'version1' } });
 
 		// Version 2 radio
 		const version2Container = radioContainer.createDiv();
@@ -132,7 +131,7 @@ export class VersionSelectionModal extends Modal {
 			value: 'version2',
 			attr: { id: 'version2', name: 'versionSelection' }
 		});
-		version2Container.createEl('label', { text: ' Version2', attr: { for: 'version2' } });
+		version2Container.createEl('label', { text: ' Version2 of source scanner', attr: { for: 'version2' } });
 
 		// Set default selection
 		version1Radio.checked = true;
@@ -427,7 +426,6 @@ export default class SourceScanner extends Plugin {
 	async handleVersionSelection(): Promise<string> {
 		try {
 			const selectedVersion = await VersionSelectionModal.selectVersion(app);
-			console.log('Selected:', selectedVersion);
 			return selectedVersion;
 		} catch (error) {
 			console.log('User cancelled');
@@ -475,6 +473,10 @@ export default class SourceScanner extends Plugin {
 						if (this.intervalHandle == undefined) {
 							sbItem.setText('Comment scanner ON')
 							this.intervalHandle = this.scanSource.init(this.app, this, lexer_plugin.scan_for_comments);
+							// When registering intervals, this function will 
+							// automatically clear the interval when the plugin 
+							// is disabled.
+							this.registerInterval(this.intervalHandle);
 						} else {
 							sbItem.setText('Comment scanner OFF')
 							clearInterval(this.intervalHandle);
@@ -529,9 +531,6 @@ export default class SourceScanner extends Plugin {
 				this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
 					console.log('click', evt);
 				});
-
-				// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-				this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
 
 				await lexer_plugin.default(Promise.resolve(lexer_wasm.default));
 
