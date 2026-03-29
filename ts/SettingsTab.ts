@@ -164,7 +164,7 @@ export class ScannerSettingsTab extends PluginSettingTab {
 
         appPathSetting
             .setName("Application Path")
-            .setDesc(`Application workspace: ${this.plugin.settings.applicationPath}`)
+            .setDesc(`Application workspace: ${this.plugin.settings.dir}`)
             .addButton(button =>
                 button
                     .setButtonText("Location of text file to scan")
