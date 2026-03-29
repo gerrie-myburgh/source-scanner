@@ -1,6 +1,6 @@
-# Source Code Scanner
+# Source Code Scanner Version 1
 
-Extracts comments from source code into notes. The plugin works with the Obsidian desktop application and compatible applications.
+Extracts comments from source code into notes. The plugin works with the Obsidian desktop application.
 
 ## Problem That the Plugin Addresses
 
