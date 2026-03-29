@@ -499,18 +499,22 @@ export default class SourceScanner extends Plugin {
 		const ribbonIconEl = this.addRibbonIcon(
 			'view',
 			'Comment Scanner TS', (evt: MouseEvent) => {
-				// Called when the user clicks the icon.
-				if (this.intervalHandle == undefined) {
-					sbItem.setText('Comment scanner ON');
-					this.intervalHandle = this.scanSource.init(this.app, this, lexer_plugin.scan_for_comments);
-					// When registering intervals, this function will 
-					// automatically clear the interval when the plugin 
-					// is disabled.
-					this.registerInterval(this.intervalHandle);
+				if (this.settings.documentPath == 'UNKNOWN') {
+					const notice = new Notice('Please configure solution scanner portion before using it.', 0.0);
 				} else {
-					sbItem.setText('Comment scanner OFF');
-					clearInterval(this.intervalHandle);
-					this.intervalHandle = undefined;
+					// Called when the user clicks the icon.
+					if (this.intervalHandle == undefined) {
+						sbItem.setText('Comment scanner ON');
+						this.intervalHandle = this.scanSource.init(this.app, this, lexer_plugin.scan_for_comments);
+						// When registering intervals, this function will 
+						// automatically clear the interval when the plugin 
+						// is disabled.
+						this.registerInterval(this.intervalHandle);
+					} else {
+						sbItem.setText('Comment scanner OFF');
+						clearInterval(this.intervalHandle);
+						this.intervalHandle = undefined;
+					}
 				}
 			});
 		// Perform additional things with the ribbon
