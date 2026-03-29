@@ -8,12 +8,21 @@ export class CrossCuttingConcerns {
     private docFolders: DocFolders;
     private utils: Utils;
 
+    /**
+     * Creates a new CrossCuttingConcerns instance
+     * @param app - The Obsidian app instance
+     * @param docFolders - The document folders configuration
+     */
     constructor(app: App, docFolders: DocFolders) {
         this.utils = new Utils(app);
         this.fsa = this.utils.fsa;
         this.docFolders = docFolders;
     }
 
+    /**
+     * Generates cross-cutting concerns documentation by analyzing markers in comment files,
+     * story files, and test files, then creates solution documents linking related markers
+     */
     generateCrossCuttingConcerns() {
         const documentToMarkerMap = new Map<string, Set<string>>;
         const testDocumentToMarkerMap = new Map<string, Set<string>>;

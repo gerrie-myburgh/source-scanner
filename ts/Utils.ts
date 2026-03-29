@@ -22,13 +22,18 @@ export class Utils {
     //
     markerRegExp = /\s\^[a-zA-Z]+[a-zA-Z0-9]+\-[0-9]+(\-[a-zA-Z]+[a-zA-Z0-9]+\-[0-9]+)*/g;
 
+    /**
+     * Creates a new Utils instance
+     * @param app - The Obsidian app instance
+     */
     constructor(app : App) { 
         this.app = app;
         this.fsa = this.app.vault.adapter as FileSystemAdapter;
     }
 
     /** 
-     * make sure the separator regex does not have single '\'
+     * Converts the separator to vault type separator
+     * @returns The vault type separator ('/')
      */
     toVaultTypeSeperator() { if (this.separator == '\\') {return '/'} else {return '/'}}
 

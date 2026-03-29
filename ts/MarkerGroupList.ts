@@ -8,12 +8,21 @@ export class MarkerGroupList {
     utils : Utils;
     docFolders : DocFolders;
 
+    /**
+     * Creates a new MarkerGroupList instance
+     * @param app - The Obsidian app instance
+     * @param docFolders - The document folders configuration
+     */
     constructor(app : App, docFolders : DocFolders) {
         this.markerFileWithPath = `${docFolders.settingsMarkerFolder}/marker-table.md`
         this.utils = new Utils(app);
         this.docFolders = docFolders;
     }
 
+    /**
+     * Generates a marker group list by scanning comment files for markers
+     * and creating a markdown table linking markers to their documents
+     */
     generateMakerGroupList() {
         //
         // some containers to use later on

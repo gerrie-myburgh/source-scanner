@@ -1,9 +1,9 @@
 {
 	"id": "source-scanner",
 	"name": "Source Scanner",
-	"version": "1.0.0",
+	"version": "2.0.0",
 	"minAppVersion": "0.15.0",
-	"description": "Scan java source and test code for comments then place it in md files.",
+	"description": "Scan text source for comments then place it in vault as text files.",
 	"author": "Gerrie Myburgh",
 	"repo": "gerrie-myburgh/source-scanner",
 	"isDesktopOnly": false

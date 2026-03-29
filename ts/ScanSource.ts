@@ -28,6 +28,13 @@ export class ScanSource {
 
     docFolders: DocFolders;            // document folders
 
+    /**
+     * Initializes the ScanSource with configuration from the plugin
+     * @param app - The Obsidian app instance
+     * @param plugin - The SourceScanner plugin instance
+     * @param scanner - The code scanner function
+     * @returns The interval ID for the scanning process
+     */
     init(app: App, plugin: SourceScanner, scanner: (arg0: string) => string) {
 
         this.codeScanner = scanner;
@@ -43,6 +50,14 @@ export class ScanSource {
         return setInterval(() => this.run(), this.sleepLength);
     }
 
+    /**
+     * Runs the scanning process in phases:
+     * 1. Collect application and test files
+     * 2. Collect existing document files
+     * 3. Scan application files
+     * 4. Scan test files
+     * 5. Clean up orphaned document files
+     */
     run() {
         //
         // the folders might have been deleted or this is the first start of the app
